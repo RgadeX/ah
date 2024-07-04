@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Webpage</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="content">
+    <h1>Welcome to My Personal Webpage</h1>
+    <div class="links">
+      <a href="https://github.com/yourusername" target="_blank">GitHub</a>
+      <a href="https://www.youtube.com/yourchannel" target="_blank">YouTube</a>
+      <a href="https://telegram.me/yourusername" target="_blank">Telegram</a>
+      <a href="https://discord.gg/yourserversinvite" target="_blank">Discord Server</a>
+    </div>
+    <div class="file-upload">
+      <input type="file" id="fileInput" />
+      <a id="downloadLink" href="#" download style="display:none;">Download File</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const link = document.getElementById('downloadLink');
+        link.href = URL.createObjectURL(file);
+        link.textContent = `Download ${file.name}`;
+        link.style.display = 'inline-block';
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function(event) {
+      document.querySelector(".content").style.opacity = 1;
+    });
+  </script>
+</body>
+</html>
