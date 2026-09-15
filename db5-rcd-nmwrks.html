@@ -1,1 +1,2199 @@
-eeee
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DUB5 Python Version Manager</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+
+  <!-- JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --bg-grad-top: #000044;
+      --bg-grad-mid: #000033;
+      --bg-grad-bottom: #000066;
+      --foreground: #FFFFFF;
+      --accent-heading: #E0F2FE;
+      --panel: rgba(255, 255, 255, 0.05);
+      --panel-hover: rgba(255, 255, 255, 0.1);
+      --panel-strong-hover: rgba(255, 255, 255, 0.22);
+      --border: rgba(255, 255, 255, 0.2);
+      --muted: rgba(255, 255, 255, 0.5);
+      --label: rgba(255, 255, 255, 0.8);
+      --badge-alert: #EF4444;
+      --modal-grad-top: #000055;
+      --modal-grad-bottom: #000044;
+      --modal-scrim: rgba(0, 0, 0, 0.8);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #60a5fa;
+
+      --font-serif: 'DM Serif Display', serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+      --radius-sm: 0.5rem;
+      --radius-lg: 1rem;
+      --radius-pill: 9999px;
+      --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+
+    /* Invisible scrollbars globally */
+    ::-webkit-scrollbar {
+      width: 0px;
+      height: 0px;
+      background: transparent;
+    }
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
+      display: none !important;
+    }
+    .CodeMirror-scroll {
+      overflow: auto !important;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .CodeMirror-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08) 0 1px, transparent 1.2px) 0 0 / 120px 120px,
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.07) 0 1px, transparent 1.2px) 0 0 / 180px 180px,
+        linear-gradient(to bottom, var(--bg-grad-top), var(--bg-grad-mid), var(--bg-grad-bottom));
+      color: var(--foreground);
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.7) 0 0.8px, transparent 1.4px),
+        radial-gradient(circle at 28% 70%, rgba(255,255,255,0.65) 0 1px, transparent 1.7px),
+        radial-gradient(circle at 45% 25%, rgba(255,255,255,0.5) 0 0.7px, transparent 1.4px),
+        radial-gradient(circle at 63% 15%, rgba(255,255,255,0.8) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 78% 50%, rgba(255,255,255,0.6) 0 0.8px, transparent 1.5px),
+        radial-gradient(circle at 90% 82%, rgba(255,255,255,0.75) 0 1px, transparent 1.8px);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+      animation: starfieldPulse 3s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    @keyframes starfieldPulse {
+      from { opacity: 0.55; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.015); }
+    }
+
+    .glass, .top-bar, .sidebar-left, .sidebar-right, .editor-area, .modal, .notification, .tab-strip, .tree-node, .market-card, .landing-card {
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hidden { display: none !important; }
+
+    .landing-screen {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 50;
+      background: linear-gradient(to bottom, rgba(0,0,68,0.92), rgba(0,0,51,0.92), rgba(0,0,102,0.92));
+    }
+
+    .landing-card {
+      width: min(92vw, 520px);
+      padding: 3rem 2rem 2.25rem;
+      border-radius: 2rem;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.055);
+      box-shadow: 0 30px 90px rgba(0,0,0,0.45);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .landing-card h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(4.8rem, 12vw, 8.2rem);
+      line-height: 0.92;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      text-shadow: 0 0 24px rgba(224, 242, 254, 0.16);
+    }
+
+    .landing-stars {
+      margin-top: 1rem;
+      font-size: clamp(1.05rem, 2.8vw, 1.5rem);
+      letter-spacing: 0.24em;
+      color: var(--accent-heading);
+      text-shadow: 0 0 14px rgba(224,242,254,0.3);
+    }
+
+    .landing-enter {
+      margin-top: 1.75rem;
+      min-width: 150px;
+      justify-content: center;
+    }
+    
+    .landing-enter svg {
+      color: white !important;
+      stroke: white !important;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 22px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      z-index: 2;
+    }
+
+    .brand-mini {
+      font-family: var(--font-serif);
+      font-size: clamp(1.25rem, 2vw, 1.75rem);
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      color: var(--foreground);
+      white-space: nowrap;
+      text-shadow: 0 0 18px rgba(224, 242, 254, 0.18);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.86);
+      padding: 0.5rem 0.85rem;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.16);
+      min-width: 220px;
+      justify-content: center;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.15);
+      flex: 0 0 auto;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+    }
+
+    .status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    button {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--foreground);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 0.72rem 0.95rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255,255,255,0.28);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+    }
+
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    button.primary {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.28);
+    }
+
+    button.primary:hover { background: rgba(255,255,255,0.2); }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 0.95rem;
+    }
+
+    .icon-btn.small {
+      width: 36px;
+      height: 36px;
+      border-radius: 0.8rem;
+    }
+
+    .icon-btn svg,
+    .tab-close svg,
+    .status-pill svg,
+    .market-action svg,
+    .tree-script-left svg,
+    .tree-version-left svg,
+    .tab svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: var(--foreground);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr) 310px;
+      gap: 1rem;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+      padding: 1rem;
+      min-height: 0;
+    }
+
+    .sidebar-left, .sidebar-right, .editor-area {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.05);
+      box-shadow: var(--shadow-soft);
+      min-height: 0;
+    }
+
+    .sidebar-left, .sidebar-right {
+      border-radius: 1rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-area {
+      border-radius: 1rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .sidebar-header, .editor-header, .panel-subheader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .sidebar-header span:first-child, .panel-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-heading);
+    }
+
+    .header-actions, .editor-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tree-scroll, .market-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      min-height: 0;
+    }
+
+    .tree-node {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      border-radius: 0.95rem;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .tree-node.active {
+      border-color: rgba(224,242,254,0.35);
+      box-shadow: 0 0 0 1px rgba(224,242,254,0.12), 0 12px 30px rgba(0,0,0,0.2);
+    }
+
+    .tree-script-row, .tree-version-row {
+      width: 100%;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      justify-content: space-between;
+      text-align: left;
+      border-radius: 0;
+      padding: 0.8rem 0.85rem;
+    }
+
+    .tree-script-row:hover, .tree-version-row:hover {
+      background: rgba(255,255,255,0.08);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .tree-script-left, .tree-version-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+
+    .tree-script-name, .tree-version-name, .market-name {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-script-meta, .tree-version-meta, .market-meta {
+      color: var(--muted);
+      font-size: 0.78rem;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .tree-versions {
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding: 0.35rem 0 0.45rem;
+      display: none;
+    }
+
+    .tree-node.expanded .tree-versions { display: block; }
+    .tree-node.expanded .caret { transform: rotate(90deg); }
+
+    .caret {
+      transition: transform 0.18s ease;
+      opacity: 0.85;
+    }
+
+    .tree-version-row {
+      padding-left: 1.7rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .tree-version-row.current { background: rgba(255,255,255,0.1); }
+    .tree-version-row.published .tree-version-meta { color: rgba(34,197,94,0.9); }
+
+    .empty-state {
+      padding: 1.35rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.45rem;
+      padding: 0.6rem 0.6rem 0;
+      overflow-x: auto;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.02);
+      min-height: 48px;
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 0.9rem 0.9rem 0 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-bottom: none;
+      padding: 0.65rem 0.8rem;
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.82);
+      min-width: 0;
+      max-width: 240px;
+      flex: 0 0 auto;
+      box-shadow: none;
+    }
+
+    .tab.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      transform: translateY(1px);
+    }
+
+    .tab-title {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .tab-dirty {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+      flex: 0 0 auto;
+    }
+
+    .tab-close {
+      width: 26px;
+      height: 26px;
+      border-radius: 9999px;
+      padding: 0;
+      margin-left: 0.1rem;
+      background: transparent;
+      border-color: transparent;
+      color: rgba(255,255,255,0.72);
+      box-shadow: none;
+    }
+
+    .tab-close:hover { background: rgba(255,255,255,0.08); }
+
+    .editor-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .script-name-input {
+      background: transparent;
+      border: none;
+      color: var(--foreground);
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      outline: none;
+      min-width: 0;
+      text-overflow: ellipsis;
+    }
+
+    .script-name-input:focus {
+      box-shadow: inset 0 -2px 0 rgba(224,242,254,0.35);
+    }
+
+    .unsaved-indicator {
+      color: var(--warning);
+      font-size: 0.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .CodeMirror {
+      flex: 1;
+      height: auto !important;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.18);
+      color: #fff;
+    }
+
+    .CodeMirror-gutters {
+      background: rgba(255,255,255,0.03);
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .CodeMirror-linenumber { color: rgba(255,255,255,0.38); }
+
+    .CodeMirror-cursor { border-left-color: #fff !important; }
+
+    .CodeMirror-selected { background: rgba(96,165,250,0.2) !important; }
+
+    .market-search {
+      display: flex;
+      gap: 8px;
+      padding: 12px 12px 0;
+    }
+
+    .market-search input,
+    .modal-input {
+      width: 100%;
+      padding: 0.82rem 0.95rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--foreground);
+      border-radius: 0.85rem;
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    .market-search input::placeholder,
+    .modal-input::placeholder,
+    .script-name-input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+
+    .market-search input:focus,
+    .modal-input:focus {
+      border-color: rgba(255,255,255,0.32);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .market-results {
+      padding: 0.75rem 0.8rem 1rem;
+    }
+
+    .market-card {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      border-radius: 0.95rem;
+      padding: 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .market-card.active {
+      border-color: rgba(224,242,254,0.3);
+    }
+
+    .market-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .market-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .market-subtitle {
+      margin-top: 0.25rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .market-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.85rem;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    #notification-area {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .notification {
+      padding: 12px 15px;
+      border-radius: 0.9rem;
+      color: white;
+      font-weight: 500;
+      font-size: 0.92rem;
+      animation: slideIn 0.25s ease;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.32);
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .notification svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .notification.info { background: rgba(96,165,250,0.95); }
+    .notification.success { background: rgba(34,197,94,0.95); }
+    .notification.error { background: rgba(239,68,68,0.95); }
+    .notification.warning { background: rgba(245,158,11,0.95); color: #000; }
+
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: grid;
+      place-items: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+
+    .modal {
+      width: min(92vw, 460px);
+      background: linear-gradient(to bottom, rgba(0,0,85,0.94), rgba(0,0,68,0.94));
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      box-shadow: 0 26px 90px rgba(0,0,0,0.45);
+    }
+
+    .modal h3 {
+      margin-bottom: 1rem;
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: 2rem;
+      color: #fff;
+    }
+
+    .modal label {
+      display: block;
+      margin: 0.6rem 0 0.4rem;
+      font-size: 0.84rem;
+      color: var(--label);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.86);
+      margin: 0.75rem 0.8rem 0;
+    }
+
+    .status-pill.success { color: rgba(34,197,94,0.95); }
+    .status-pill.error { color: rgba(239,68,68,0.95); }
+    .status-pill.warning { color: rgba(245,158,11,0.95); }
+
+    .status-pill svg { width: 14px; height: 14px; }
+
+    .readonly-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      .main-content {
+        grid-template-columns: 260px minmax(0, 1fr);
+      }
+      .sidebar-right { display: none; }
+    }
+
+    @media (max-width: 860px) {
+      body { overflow: auto; }
+      .app-shell { min-height: 100vh; height: auto; }
+      .top-bar { flex-wrap: wrap; }
+      .status { order: 3; width: 100%; justify-content: center; }
+      .main-content { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .sidebar-left { order: 2; }
+      .editor-area { order: 1; min-height: 70vh; }
+      .sidebar-right { display: flex; order: 3; }
+    }
+  </style>
+</head>
+<body>
+  <section id="landing-screen" class="landing-screen">
+    <div class="landing-card glass">
+      <h1>DUB5</h1>
+      <div class="landing-stars" aria-label="Premium quality rating">★★★★★</div>
+      <button id="btn-enter" class="primary landing-enter" aria-label="Enter the script manager"></button>
+    </div>
+  </section>
+
+  <div id="app-shell" class="app-shell hidden">
+    <header class="top-bar">
+      <div class="brand-mini">DUB5</div>
+      <div class="status" id="calc-status" title="Calculator connection status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text" class="status-label">Not connected</span>
+      </div>
+      <div class="actions">
+        <button id="btn-connect" class="icon-btn" title="Connect calculator" aria-label="Connect calculator"></button>
+        <button id="btn-upload" class="icon-btn" title="Load to calculator" aria-label="Load to calculator"></button>
+        <button id="btn-export" class="icon-btn" title="Export ZIP" aria-label="Export ZIP"></button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <aside class="sidebar-left">
+        <div class="sidebar-header">
+          <span>Explorer</span>
+          <div class="header-actions">
+            <button id="btn-new-script" class="icon-btn small" title="New script" aria-label="New script"></button>
+            <button id="btn-import-py" class="icon-btn small" title="Import Python file (.py)" aria-label="Import Python file (.py)"></button>
+            <input type="file" id="file-import" accept=".py" style="display:none">
+          </div>
+        </div>
+        <div class="tree-scroll" id="script-tree">
+          <div class="empty-state">No scripts yet</div>
+        </div>
+      </aside>
+
+      <section class="editor-area">
+        <div class="editor-header">
+          <div class="editor-meta">
+            <input type="text" id="script-name-input" class="script-name-input" placeholder="" disabled>
+            <span id="unsaved-indicator" class="unsaved-indicator hidden">● Unsaved changes</span>
+            <span id="readonly-hint" class="readonly-hint hidden">Read-only</span>
+          </div>
+          <div class="editor-actions">
+            <button id="btn-save-version" class="icon-btn" title="Save version" aria-label="Save version"></button>
+            <button id="btn-publish" class="icon-btn" title="Publish to GitHub" aria-label="Publish to GitHub"></button>
+          </div>
+        </div>
+        <div class="tabs" id="tab-strip"></div>
+        <div class="editor-wrap">
+          <textarea id="code-editor"></textarea>
+        </div>
+      </section>
+
+      <aside class="sidebar-right">
+        <div class="sidebar-header">
+          <span>Marketplace</span>
+          <div class="header-actions">
+            <button id="btn-market-refresh" class="icon-btn small" title="Refresh marketplace" aria-label="Refresh marketplace"></button>
+          </div>
+        </div>
+        <div class="market-search">
+          <input id="market-search-input" type="text" placeholder="Search free scripts">
+          <button id="btn-market-search" class="icon-btn small" title="Search marketplace" aria-label="Search marketplace"></button>
+        </div>
+        <div id="market-status" class="status-pill hidden"></div>
+        <div class="market-scroll" id="market-results">
+          <div class="empty-state">Search the free library of shared scripts.</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="notification-area"></div>
+  <div id="modal-root"></div>
+
+  <script>
+    (function createStarfield() {
+      const field = document.createElement('div');
+      field.style.position = 'fixed';
+      field.style.inset = '0';
+      field.style.pointerEvents = 'none';
+      field.style.zIndex = '0';
+      const total = 120;
+      for (let i = 0; i < total; i++) {
+        const star = document.createElement('span');
+        const size = (Math.random() * 1.9 + 0.1).toFixed(2);
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const duration = (Math.random() * 1.6 + 1.8).toFixed(2);
+        const delay = (Math.random() * 3).toFixed(2);
+        star.style.position = 'absolute';
+        star.style.left = `${x}%`;
+        star.style.top = `${y}%`;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.borderRadius = '50%';
+        star.style.background = 'rgba(255,255,255,0.95)';
+        star.style.boxShadow = '0 0 8px rgba(224,242,254,0.55)';
+        star.style.animation = `starTwinkle ${duration}s ease-in-out ${delay}s infinite alternate`;
+        field.appendChild(star);
+      }
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes starTwinkle {
+          0% { opacity: 0.22; transform: scale(0.5); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(field);
+    })();
+  </script>
+
+  <script type="module">
+    import Numworks from 'https://esm.sh/upsilon.js@1.4.2';
+
+    const DB_NAME = 'DUB5VersionManager';
+    const DB_VERSION = 2;
+
+    const GITHUB_OWNER = 'RgadeX';
+    const GITHUB_REPO = 'ah';
+    const GITHUB_BRANCH = 'main';
+    const GITHUB_TOKEN = 'PASTE_YOUR_GITHUB_SECRET_TOKEN_HERE';
+
+    const ICONS = {
+      enter: `<svg viewBox="0 0 24 24"><path d="M8 5l8 7-8 7"></path></svg>`,
+      plug: `<svg viewBox="0 0 24 24"><path d="M9 7v6"></path><path d="M15 7v6"></path><path d="M12 13v4"></path><path d="M7 11h10"></path><path d="M10 17h4"></path></svg>`,
+      upload: `<svg viewBox="0 0 24 24"><path d="M12 16V4"></path><path d="M8 8l4-4 4 4"></path><path d="M4 20h16"></path></svg>`,
+      zip: `<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5"></path><path d="M10 10h2"></path><path d="M10 13h2"></path><path d="M10 16h2"></path></svg>`,
+      plus: `<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>`,
+      import: `<svg viewBox="0 0 24 24"><path d="M12 16V4"></path><path d="M8 8l4-4 4 4"></path><path d="M5 20h14"></path></svg>`,
+      save: `<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v6h7V4"></path><path d="M8 20v-6h8v6"></path></svg>`,
+      cloud: `<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 5 5 0 0 0-9.7-1.3A4 4 0 0 0 7 18z"></path><path d="M12 12v6"></path><path d="M9.5 14.5L12 12l2.5 2.5"></path></svg>`,
+      search: `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-3.5-3.5"></path></svg>`,
+      refresh: `<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-13.66 5.66"></path><path d="M4 12a8 8 0 0 1 13.66-5.66"></path><path d="M17 18h3v3"></path><path d="M7 6H4V3"></path></svg>`,
+      chevron: `<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg>`,
+      folder: `<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H3z"></path></svg>`,
+      file: `<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path></svg>`,
+      close: `<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>`,
+      check: `<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>`,
+      warning: `<svg viewBox="0 0 24 24"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 4.9l-7.4 12.8A2 2 0 0 0 4.6 21h14.8a2 2 0 0 0 1.7-3.3L13.7 4.9a2 2 0 0 0-3.4 0z"></path></svg>`,
+      edit: `<svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>`,
+      eye: `<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+      spark: `<svg viewBox="0 0 24 24"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z"></path></svg>`
+    };
+
+    function icon(name) { return ICONS[name] || ''; }
+    function setIconButton(el, name) { el.innerHTML = icon(name); }
+
+    function generateUUID() {
+      return crypto.randomUUID();
+    }
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function getAmsterdamParts(date = new Date()) {
+      const dtf = new Intl.DateTimeFormat('nl-NL', {
+        timeZone: 'Europe/Amsterdam',
+        day: 'numeric', month: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      const parts = dtf.formatToParts(date);
+      const get = (type) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
+      return {
+        day: get('day'),
+        month: get('month'),
+        year: get('year'),
+        hour: get('hour'),
+        minute: get('minute')
+      };
+    }
+
+    function formatAmsterdamFilename(date = new Date()) {
+      const p = getAmsterdamParts(date);
+      return `${p.day}-${p.month}-${p.year}-${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+    }
+
+    function formatAmsterdamDisplay(date = new Date()) {
+      const p = getAmsterdamParts(date);
+      return `${p.day}-${p.month}-${p.year} ${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+    }
+
+    function defaultScriptName() {
+      return `${formatAmsterdamFilename()}.py`;
+    }
+
+    function ensurePyExtension(name) {
+      let n = (name || '').trim();
+      if (!n) return defaultScriptName();
+      if (!/\.py$/i.test(n)) n += '.py';
+      return n;
+    }
+
+    function baseName(name) {
+      return (name || '').replace(/\.py$/i, '');
+    }
+
+    function versionLabel(versionNumber) {
+      return `v1.${Math.max(0, versionNumber - 1)}`;
+    }
+
+    function makeTabTitle(scriptName, versionNumber, isRemote = false) {
+      const base = baseName(scriptName || 'Untitled');
+      return versionNumber ? `${base} · ${versionLabel(versionNumber)}` : base;
+    }
+
+    function showNotification(message, type = 'info') {
+      const area = document.getElementById('notification-area');
+      const div = document.createElement('div');
+      div.className = `notification ${type}`;
+      const iconName = type === 'success' ? 'check' : type === 'error' ? 'warning' : type === 'warning' ? 'warning' : 'spark';
+      div.innerHTML = `${icon(iconName)}<span>${message}</span>`;
+      area.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = '0';
+        setTimeout(() => div.remove(), 250);
+      }, 3500);
+    }
+
+    function showStatusPill(message, type = 'info') {
+      const pill = document.getElementById('market-status');
+      pill.className = `status-pill ${type}`;
+      pill.innerHTML = `${icon(type === 'success' ? 'check' : type === 'error' ? 'warning' : 'spark')}<span>${message}</span>`;
+      pill.classList.remove('hidden');
+      clearTimeout(showStatusPill._timer);
+      showStatusPill._timer = setTimeout(() => pill.classList.add('hidden'), 3000);
+    }
+
+    async function openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('scripts')) {
+            db.createObjectStore('scripts', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('versions')) {
+            const store = db.createObjectStore('versions', { keyPath: 'id' });
+            store.createIndex('scriptId', 'scriptId', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('restorePoints')) {
+            const store = db.createObjectStore('restorePoints', { keyPath: 'id' });
+            store.createIndex('scriptId', 'scriptId', { unique: false });
+          }
+        };
+      });
+    }
+
+    async function dbGetAll(storeName) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbPut(storeName, data) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const req = tx.objectStore(storeName).put(data);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGet(storeName, id) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).get(id);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function bufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    function textToBase64(text) {
+      return bufferToBase64(new TextEncoder().encode(text));
+    }
+
+    function base64ToText(base64) {
+      const binary = atob(base64.replace(/\n/g, '').replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }
+
+    class CalculatorManager {
+      constructor() {
+        this.device = null;
+        this.isConnected = false;
+        this.platformInfo = null;
+      }
+
+      getDeviceLabel() {
+        if (!this.platformInfo) return 'NumWorks';
+        return this.platformInfo.model || this.platformInfo.name || this.platformInfo.device || 'NumWorks';
+      }
+
+      async connect() {
+        this.device = new Numworks();
+        return new Promise((resolve, reject) => {
+          this.device.detect(async () => {
+            try {
+              this.platformInfo = await this.device.getPlatformInfo();
+              this.isConnected = true;
+              resolve(this.platformInfo);
+              showNotification(`Connected to ${this.getDeviceLabel()}`, 'success');
+            } catch (e) {
+              reject(e);
+            }
+          }, (err) => {
+            this.isConnected = false;
+            showNotification('Connection failed: ' + (err.message || err), 'error');
+            reject(err);
+          });
+        });
+      }
+
+      async autoConnect() {
+        if (!this.device) this.device = new Numworks();
+        return new Promise((resolve) => {
+          let finished = false;
+          const settle = (value) => {
+            if (finished) return;
+            finished = true;
+            resolve(value);
+          };
+          this.device.autoConnect(async () => {
+            try {
+              this.device.stopAutoConnect();
+              this.platformInfo = await this.device.getPlatformInfo();
+              this.isConnected = true;
+              settle(this.platformInfo);
+            } catch (_) {
+              settle(null);
+            }
+          });
+          setTimeout(() => {
+            try { this.device.stopAutoConnect(); } catch (_) {}
+            this.isConnected = false;
+            settle(null);
+          }, 3000);
+        });
+      }
+
+      async getScripts() {
+        if (!this.isConnected) throw new Error('Not connected');
+        const storage = await this.device.backupStorage();
+        return (storage.records || []).filter(r => r.type === 'py').map(r => ({
+          name: r.name,
+          code: r.code,
+          autoImport: r.autoImport
+        }));
+      }
+
+      async uploadScript(name, code) {
+        if (!this.isConnected) throw new Error('Not connected');
+        const storage = await this.device.backupStorage();
+        const records = Array.isArray(storage.records) ? storage.records : [];
+        const existingIndex = records.findIndex(r => r.name === name && r.type === 'py');
+        const newRecord = { name, type: 'py', autoImport: false, code };
+        if (existingIndex >= 0) records[existingIndex] = newRecord;
+        else records.push(newRecord);
+        storage.records = records;
+
+        await new Promise((resolve, reject) => {
+          try {
+            this.device.installStorage(storage, () => resolve());
+          } catch (e) {
+            reject(e);
+          }
+        });
+
+        const verifyStorage = await this.device.backupStorage();
+        const verifyRecord = (verifyStorage.records || []).find(r => r.name === name && r.type === 'py');
+        if (!verifyRecord || verifyRecord.code !== code) {
+          throw new Error('Verification failed: uploaded code does not match.');
+        }
+        return true;
+      }
+    }
+
+    const app = {
+      state: {
+        scripts: [],
+        versions: [],
+        restorePoints: [],
+        openTabs: [],
+        activeTabId: null,
+        currentScriptId: null,
+        unsavedChanges: false,
+        calc: new CalculatorManager(),
+        editor: null,
+        suppressEditorChange: false,
+        marketCache: [],
+        marketLoading: false,
+        marketQuery: '',
+        marketplaceInitialized: false,
+        entered: false
+      },
+
+      async init() {
+        setIconButton(document.getElementById('btn-enter'), 'enter');
+        setIconButton(document.getElementById('btn-connect'), 'plug');
+        setIconButton(document.getElementById('btn-upload'), 'upload');
+        setIconButton(document.getElementById('btn-export'), 'zip');
+        setIconButton(document.getElementById('btn-new-script'), 'plus');
+        setIconButton(document.getElementById('btn-import-py'), 'import');
+        setIconButton(document.getElementById('btn-save-version'), 'save');
+        setIconButton(document.getElementById('btn-publish'), 'cloud');
+        setIconButton(document.getElementById('btn-market-search'), 'search');
+        setIconButton(document.getElementById('btn-market-refresh'), 'refresh');
+
+        this.state.scripts = await dbGetAll('scripts');
+        this.state.versions = await dbGetAll('versions');
+        this.state.restorePoints = await dbGetAll('restorePoints');
+        this.initEditor();
+        this.setupEventListeners();
+        this.renderExplorer();
+        this.renderTabs();
+        this.updateEditorMeta();
+        await this.refreshMarketplace(true);
+
+        const info = await this.state.calc.autoConnect();
+        if (info) this.updateCalcStatus(true, info);
+        else this.updateCalcStatus(false, null);
+
+        this.updateUI();
+      },
+
+      initEditor() {
+        this.state.editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+          mode: 'python',
+          theme: 'dracula',
+          lineNumbers: true,
+          tabSize: 4,
+          indentWithTabs: false,
+          lineWrapping: true,
+          viewportMargin: Infinity,
+          extraKeys: {
+            'Ctrl-S': () => this.saveVersion(),
+            'Cmd-S': () => this.saveVersion()
+          }
+        });
+        this.state.editor.getWrapperElement().style.display = 'flex';
+        this.state.editor.getWrapperElement().style.flex = '1';
+        this.state.editor.getWrapperElement().style.pointerEvents = 'auto';
+        
+        this.state.editor.getWrapperElement().addEventListener('click', () => {
+          this.state.editor.focus();
+        });
+
+        this.state.editor.on('change', () => {
+          if (this.state.suppressEditorChange) return;
+          const tab = this.getActiveTab();
+          if (!tab || tab.readOnly) return;
+          tab.content = this.state.editor.getValue();
+          tab.dirty = true;
+          this.state.unsavedChanges = true;
+          this.updateUI();
+          this.renderTabs();
+        });
+      },
+
+      setupEventListeners() {
+        document.getElementById('btn-enter').addEventListener('click', () => {
+          document.getElementById('landing-screen').classList.add('hidden');
+          document.getElementById('app-shell').classList.remove('hidden');
+          this.state.entered = true;
+          this.state.editor.refresh();
+        });
+
+        document.getElementById('btn-connect').addEventListener('click', async () => {
+          try {
+            const info = await this.state.calc.connect();
+            this.updateCalcStatus(true, info);
+            await this.syncFromCalculator();
+          } catch (e) {
+            this.updateCalcStatus(false, null);
+          }
+        });
+
+        document.getElementById('btn-new-script').addEventListener('click', () => {
+          this.showModal('New script', [
+            { id: 'script-name', label: 'Filename', type: 'text', placeholder: 'Leave blank for timestamp name' }
+          ], async (data) => {
+            const entered = (data['script-name'] || '').trim();
+            const name = ensurePyExtension(entered);
+            if (this.state.scripts.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+              showNotification('That file already exists', 'error');
+              return;
+            }
+            const script = {
+              id: generateUUID(),
+              name,
+              activeVersionId: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              published: false,
+              publishedAt: null
+            };
+            await dbPut('scripts', script);
+            this.state.scripts.push(script);
+            this.renderExplorer();
+            this.openTabForScript(script.id);
+            showNotification('Script created', 'success');
+          });
+        });
+
+        document.getElementById('btn-import-py').addEventListener('click', () => {
+          document.getElementById('file-import').click();
+        });
+
+        document.getElementById('file-import').addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const text = await file.text();
+          let name = ensurePyExtension(file.name);
+          if (this.state.scripts.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+            name = ensurePyExtension(`${baseName(file.name)}_${formatAmsterdamFilename()}`);
+          }
+          const script = {
+            id: generateUUID(),
+            name,
+            activeVersionId: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            published: false,
+            publishedAt: null
+          };
+          await dbPut('scripts', script);
+          this.state.scripts.push(script);
+          this.renderExplorer();
+          const tabId = this.openTabForScript(script.id, { content: text, fromImport: true });
+          this.state.activeTabId = tabId;
+          this.setActiveTab(tabId);
+          showNotification('Imported Python file', 'success');
+          e.target.value = '';
+        });
+
+        document.getElementById('script-name-input').addEventListener('change', async (e) => {
+          if (!this.state.currentScriptId) return;
+          const newName = ensurePyExtension(e.target.value.trim());
+          const script = this.state.scripts.find(s => s.id === this.state.currentScriptId);
+          if (!script) return;
+          if (script.name.toLowerCase() === newName.toLowerCase()) {
+            e.target.value = script.name;
+            return;
+          }
+          if (this.state.scripts.some(s => s.id !== script.id && s.name.toLowerCase() === newName.toLowerCase())) {
+            showNotification('Another file already uses that name', 'error');
+            e.target.value = script.name;
+            return;
+          }
+          script.name = newName;
+          script.updatedAt = new Date().toISOString();
+          await dbPut('scripts', script);
+          this.updateTabLabelsForScript(script.id);
+          this.renderExplorer();
+          e.target.value = script.name;
+          showNotification('Filename updated', 'success');
+        });
+
+        document.getElementById('btn-save-version').addEventListener('click', () => this.saveVersion());
+        document.getElementById('btn-publish').addEventListener('click', () => this.publishActiveScript());
+        document.getElementById('btn-upload').addEventListener('click', () => this.loadActiveTabToCalculator());
+        document.getElementById('btn-export').addEventListener('click', () => this.exportAll());
+        document.getElementById('btn-market-search').addEventListener('click', () => this.refreshMarketplace());
+        document.getElementById('btn-market-refresh').addEventListener('click', () => this.refreshMarketplace(true));
+        document.getElementById('market-search-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.refreshMarketplace();
+        });
+        document.getElementById('market-search-input').addEventListener('input', (e) => {
+          this.state.marketQuery = e.target.value;
+          this.renderMarketplace();
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+          if (this.state.unsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+          }
+        });
+      },
+
+      getActiveTab() {
+        return this.state.openTabs.find(t => t.id === this.state.activeTabId) || null;
+      },
+
+      getScript(scriptId) {
+        return this.state.scripts.find(s => s.id === scriptId) || null;
+      },
+
+      getVersionsForScript(scriptId) {
+        return this.state.versions.filter(v => v.scriptId === scriptId).sort((a, b) => a.versionNumber - b.versionNumber);
+      },
+
+      getVersion(scriptId, versionId) {
+        return this.state.versions.find(v => v.id === versionId && v.scriptId === scriptId) || null;
+      },
+
+      getLatestVersion(scriptId) {
+        const versions = this.getVersionsForScript(scriptId);
+        if (!versions.length) return null;
+        return versions[versions.length - 1];
+      },
+
+      makeScriptTitle(script) {
+        return baseName(script?.name || 'Untitled');
+      },
+
+      async ensureEntered() {
+        if (!this.state.entered) {
+          document.getElementById('landing-screen').classList.add('hidden');
+          document.getElementById('app-shell').classList.remove('hidden');
+          this.state.entered = true;
+          this.state.editor.refresh();
+        }
+      },
+
+      openTabForScript(scriptId, options = {}) {
+        const script = this.getScript(scriptId);
+        if (!script) return null;
+        const version = options.versionId ? this.getVersion(scriptId, options.versionId) : this.getVersion(scriptId, script.activeVersionId) || this.getLatestVersion(scriptId);
+        const tabKey = `${scriptId}:${version ? version.id : 'draft'}:${options.remote ? 'remote' : 'local'}`;
+        const existing = this.state.openTabs.find(t => t.key === tabKey);
+        if (existing) {
+          this.setActiveTab(existing.id);
+          return existing.id;
+        }
+        const tab = {
+          id: generateUUID(),
+          key: tabKey,
+          scriptId,
+          versionId: version ? version.id : null,
+          title: makeTabTitle(script.name, version ? version.versionNumber : null),
+          content: typeof options.content === 'string' ? options.content : (version ? version.sourceCode : ''),
+          dirty: false,
+          remote: !!options.remote,
+          readOnly: !!options.remote,
+          sourceLabel: options.remote ? 'Marketplace' : 'Local'
+        };
+        this.state.openTabs.push(tab);
+        this.setActiveTab(tab.id, { force: true });
+        return tab.id;
+      },
+
+      openRemoteTab(remoteName, content) {
+        const tabKey = `marketplace:${remoteName}`;
+        const existing = this.state.openTabs.find(t => t.key === tabKey);
+        if (existing) {
+          this.setActiveTab(existing.id);
+          return existing.id;
+        }
+        const tab = {
+          id: generateUUID(),
+          key: tabKey,
+          scriptId: null,
+          versionId: null,
+          title: baseName(remoteName),
+          content: content || '',
+          dirty: false,
+          remote: true,
+          readOnly: true,
+          sourceLabel: 'Marketplace'
+        };
+        this.state.openTabs.push(tab);
+        this.setActiveTab(tab.id, { force: true });
+        return tab.id;
+      },
+
+      async setActiveTab(tabId, options = {}) {
+        const tab = this.state.openTabs.find(t => t.id === tabId);
+        if (!tab) return;
+        const current = this.getActiveTab();
+        if (current && current.id !== tab.id && !options.force && !current.readOnly) {
+          current.content = this.state.editor.getValue();
+          current.dirty = current.content !== this.getSavedTabContent(current);
+        }
+        this.state.activeTabId = tabId;
+        this.state.currentScriptId = tab.scriptId;
+        await this.refreshEditorForActiveTab();
+        this.renderTabs();
+        this.renderExplorer();
+        this.updateEditorMeta();
+        this.updateUI();
+      },
+
+      getSavedTabContent(tab) {
+        if (!tab) return '';
+        if (tab.remote) return tab.content || '';
+        const script = this.getScript(tab.scriptId);
+        if (!script) return tab.content || '';
+        const version = tab.versionId ? this.getVersion(tab.scriptId, tab.versionId) : null;
+        if (version) return version.sourceCode;
+        return tab.content || '';
+      },
+
+      async refreshEditorForActiveTab() {
+        const tab = this.getActiveTab();
+        const nameInput = document.getElementById('script-name-input');
+        const readOnlyHint = document.getElementById('readonly-hint');
+        if (!tab) {
+          this.state.editor.setValue('');
+          nameInput.value = '';
+          nameInput.disabled = true;
+          readOnlyHint.classList.add('hidden');
+          this.state.unsavedChanges = false;
+          this.updateUI();
+          return;
+        }
+        const content = tab.remote ? tab.content : (tab.content ?? '');
+        this.state.suppressEditorChange = true;
+        this.state.editor.setValue(content);
+        this.state.suppressEditorChange = false;
+        nameInput.value = tab.scriptId ? (this.getScript(tab.scriptId)?.name || '') : tab.title;
+        nameInput.disabled = !!tab.readOnly || !tab.scriptId;
+        readOnlyHint.classList.toggle('hidden', !tab.readOnly);
+        this.state.unsavedChanges = !!tab.dirty && !tab.readOnly;
+        this.state.editor.setOption('readOnly', tab.readOnly ? 'nocursor' : false);
+        this.state.editor.refresh();
+        setTimeout(() => this.state.editor.focus(), 50);
+      },
+
+      updateEditorMeta() {
+        const tab = this.getActiveTab();
+        const nameInput = document.getElementById('script-name-input');
+        const readOnlyHint = document.getElementById('readonly-hint');
+        if (!tab) {
+          nameInput.value = '';
+          nameInput.disabled = true;
+          readOnlyHint.classList.add('hidden');
+          return;
+        }
+        if (tab.scriptId) {
+          const script = this.getScript(tab.scriptId);
+          nameInput.value = script ? script.name : tab.title;
+          nameInput.disabled = tab.readOnly;
+        } else {
+          nameInput.value = tab.title;
+          nameInput.disabled = true;
+        }
+        readOnlyHint.classList.toggle('hidden', !tab.readOnly);
+      },
+
+      renderTabs() {
+        const strip = document.getElementById('tab-strip');
+        strip.innerHTML = '';
+        if (this.state.openTabs.length === 0) {
+          return;
+        }
+        this.state.openTabs.forEach(tab => {
+          const el = document.createElement('button');
+          el.className = `tab ${tab.id === this.state.activeTabId ? 'active' : ''}`;
+          el.title = tab.remote ? `${tab.title} (preview)` : tab.title;
+          el.innerHTML = `
+            <span class="tree-version-left" style="gap:0.45rem; min-width:0; flex:1;">
+              ${icon(tab.remote ? 'eye' : 'file')}
+              <span class="tab-title">${tab.title}</span>
+              ${tab.dirty ? '<span class="tab-dirty" aria-label="Unsaved changes"></span>' : ''}
+            </span>
+            <span class="tab-close" role="button" aria-label="Close tab">${icon('close')}</span>
+          `;
+          el.addEventListener('click', (e) => {
+            if (e.target.closest('.tab-close')) {
+              e.stopPropagation();
+              this.closeTab(tab.id);
+              return;
+            }
+            this.setActiveTab(tab.id);
+          });
+          strip.appendChild(el);
+        });
+      },
+
+      closeTab(tabId) {
+        const tab = this.state.openTabs.find(t => t.id === tabId);
+        if (!tab) return;
+        if (tab.dirty && !tab.readOnly) {
+          const discard = confirm('This tab has unsaved changes. Close it anyway?');
+          if (!discard) return;
+        }
+        const idx = this.state.openTabs.findIndex(t => t.id === tabId);
+        this.state.openTabs.splice(idx, 1);
+        if (this.state.activeTabId === tabId) {
+          const next = this.state.openTabs[Math.max(0, idx - 1)] || this.state.openTabs[0] || null;
+          if (next) this.setActiveTab(next.id, { force: true });
+          else {
+            this.state.activeTabId = null;
+            this.state.currentScriptId = null;
+            this.state.editor.setValue('');
+            this.updateEditorMeta();
+            this.updateUI();
+            this.renderTabs();
+            this.renderExplorer();
+          }
+        } else {
+          this.renderTabs();
+          this.renderExplorer();
+        }
+      },
+
+      updateTabLabelsForScript(scriptId) {
+        const script = this.getScript(scriptId);
+        if (!script) return;
+        this.state.openTabs.filter(t => t.scriptId === scriptId).forEach(tab => {
+          const version = tab.versionId ? this.getVersion(scriptId, tab.versionId) : null;
+          tab.title = makeTabTitle(script.name, version ? version.versionNumber : null, tab.remote);
+        });
+        this.renderTabs();
+        this.updateEditorMeta();
+      },
+
+      async loadScriptVersion(scriptId, versionId = null) {
+        const script = this.getScript(scriptId);
+        if (!script) return;
+        const version = versionId ? this.getVersion(scriptId, versionId) : this.getLatestVersion(scriptId);
+        if (this.state.unsavedChanges) {
+          const discard = confirm('You have unsaved changes in the active tab. Open the selected file anyway?');
+          if (!discard) return;
+        }
+        const content = version ? version.sourceCode : '';
+        const tabId = this.openTabForScript(scriptId, { versionId: version ? version.id : null, content });
+        if (tabId) await this.setActiveTab(tabId, { force: true });
+      },
+
+      async saveVersion(options = {}) {
+        const tab = this.getActiveTab();
+        if (!tab || tab.readOnly || !tab.scriptId) {
+          showNotification('Open a local script before saving', 'warning');
+          return null;
+        }
+        const script = this.getScript(tab.scriptId);
+        if (!script) return null;
+        const code = this.state.editor.getValue();
+        const hash = await sha256(code);
+        const currentVersion = tab.versionId ? await dbGet('versions', tab.versionId) : null;
+        if (currentVersion && currentVersion.sourceHash === hash && !options.force) {
+          if (!options.silent) showNotification('No changes detected', 'warning');
+          return currentVersion;
+        }
+
+        const versions = this.getVersionsForScript(script.id);
+        const nextNum = versions.length ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1;
+        const version = {
+          id: generateUUID(),
+          scriptId: script.id,
+          parentVersionId: currentVersion ? currentVersion.id : null,
+          branchId: currentVersion ? currentVersion.branchId : 'main',
+          versionNumber: nextNum,
+          displayName: `${baseName(script.name)} (${versionLabel(nextNum)})`,
+          commitMessage: options.commitMessage || '',
+          sourceCode: code,
+          createdAt: new Date().toISOString(),
+          characterCount: code.length,
+          lineCount: code.split('\n').length,
+          sourceHash: hash,
+          uploadedToCalculator: false,
+          uploadedAt: null,
+          published: false,
+          publishedAt: null,
+          publishedPath: null
+        };
+
+        await dbPut('versions', version);
+        this.state.versions.push(version);
+
+        script.activeVersionId = version.id;
+        script.updatedAt = new Date().toISOString();
+        await dbPut('scripts', script);
+
+        const restorePoint = {
+          id: generateUUID(),
+          scriptId: script.id,
+          versionId: version.id,
+          name: `${baseName(script.name)} ${formatAmsterdamDisplay(new Date())}`,
+          description: 'Automatic restore point',
+          createdAt: new Date().toISOString()
+        };
+        await dbPut('restorePoints', restorePoint);
+        this.state.restorePoints.push(restorePoint);
+
+        tab.versionId = version.id;
+        tab.content = code;
+        tab.dirty = false;
+        tab.title = makeTabTitle(script.name, version.versionNumber, tab.remote);
+        this.state.unsavedChanges = false;
+
+        this.renderExplorer();
+        this.renderTabs();
+        this.updateEditorMeta();
+        this.updateUI();
+        if (!options.silent) showNotification('Version saved and restore point created automatically', 'success');
+        return version;
+      },
+
+      async loadActiveTabToCalculator() {
+        const tab = this.getActiveTab();
+        if (!tab || tab.readOnly) {
+          showNotification('Open a local script first', 'warning');
+          return;
+        }
+        if (!this.state.calc.isConnected) {
+          showNotification('Please connect the calculator first', 'warning');
+          return;
+        }
+        const script = this.getScript(tab.scriptId);
+        if (!script) return;
+        const code = this.state.editor.getValue();
+        if (tab.dirty) await this.saveVersion({ silent: true, force: true });
+        const confirmUpload = confirm(`Load "${script.name}" to the calculator? This overwrites the current file on the device.`);
+        if (!confirmUpload) return;
+        try {
+          showNotification('Uploading to calculator...', 'info');
+          await this.state.calc.uploadScript(script.name, code);
+          const version = tab.versionId ? await dbGet('versions', tab.versionId) : null;
+          if (version) {
+            version.uploadedToCalculator = true;
+            version.uploadedAt = new Date().toISOString();
+            await dbPut('versions', version);
+          }
+          showNotification('Uploaded and verified successfully', 'success');
+          this.renderExplorer();
+        } catch (e) {
+          showNotification('Upload failed: ' + e.message, 'error');
+        }
+      },
+
+      async syncFromCalculator() {
+        try {
+          const calcScripts = await this.state.calc.getScripts();
+          for (const cs of calcScripts) {
+            const hash = await sha256(cs.code);
+            const existing = this.state.scripts.find(s => s.name === ensurePyExtension(cs.name));
+            if (!existing) {
+              const script = {
+                id: generateUUID(),
+                name: ensurePyExtension(cs.name),
+                activeVersionId: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                published: false,
+                publishedAt: null
+              };
+              await dbPut('scripts', script);
+              this.state.scripts.push(script);
+              const version = {
+                id: generateUUID(),
+                scriptId: script.id,
+                parentVersionId: null,
+                branchId: 'main',
+                versionNumber: 1,
+                displayName: `${baseName(script.name)} (${versionLabel(1)})`,
+                commitMessage: 'Imported from calculator',
+                sourceCode: cs.code,
+                createdAt: new Date().toISOString(),
+                characterCount: cs.code.length,
+                lineCount: cs.code.split('\n').length,
+                sourceHash: hash,
+                uploadedToCalculator: true,
+                uploadedAt: new Date().toISOString(),
+                published: false,
+                publishedAt: null,
+                publishedPath: null
+              };
+              await dbPut('versions', version);
+              this.state.versions.push(version);
+              script.activeVersionId = version.id;
+              await dbPut('scripts', script);
+            } else {
+              const activeVersion = existing.activeVersionId ? await dbGet('versions', existing.activeVersionId) : null;
+              if (!activeVersion || activeVersion.sourceHash !== hash) {
+                const versions = this.getVersionsForScript(existing.id);
+                const nextNum = versions.length ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1;
+                const version = {
+                  id: generateUUID(),
+                  scriptId: existing.id,
+                  parentVersionId: existing.activeVersionId,
+                  branchId: activeVersion ? activeVersion.branchId : 'main',
+                  versionNumber: nextNum,
+                  displayName: `${baseName(existing.name)} (${versionLabel(nextNum)})`,
+                  commitMessage: 'Auto-synced from device',
+                  sourceCode: cs.code,
+                  createdAt: new Date().toISOString(),
+                  characterCount: cs.code.length,
+                  lineCount: cs.code.split('\n').length,
+                  sourceHash: hash,
+                  uploadedToCalculator: true,
+                  uploadedAt: new Date().toISOString(),
+                  published: false,
+                  publishedAt: null,
+                  publishedPath: null
+                };
+                await dbPut('versions', version);
+                this.state.versions.push(version);
+                existing.activeVersionId = version.id;
+                existing.updatedAt = new Date().toISOString();
+                await dbPut('scripts', existing);
+              }
+            }
+          }
+          this.state.scripts = await dbGetAll('scripts');
+          this.state.versions = await dbGetAll('versions');
+          this.renderExplorer();
+          showNotification('Calculator scripts synchronized', 'success');
+        } catch (e) {
+          showNotification('Sync failed: ' + e.message, 'error');
+        }
+      },
+
+      updateCalcStatus(connected, info) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const btn = document.getElementById('btn-connect');
+        if (connected) {
+          dot.classList.add('connected');
+          const label = info?.model || info?.name || info?.device || this.state.calc.getDeviceLabel();
+          text.textContent = `Connected — ${label}`;
+          btn.title = `Reconnect calculator (${label})`;
+        } else {
+          dot.classList.remove('connected');
+          text.textContent = 'Not connected';
+          btn.title = 'Connect calculator';
+        }
+      },
+
+      renderExplorer() {
+        const tree = document.getElementById('script-tree');
+        tree.innerHTML = '';
+        if (!this.state.scripts.length) {
+          tree.innerHTML = '<div class="empty-state">No scripts yet</div>';
+          return;
+        }
+        const scripts = [...this.state.scripts].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        for (const script of scripts) {
+          const versions = this.getVersionsForScript(script.id);
+          const currentVersion = script.activeVersionId ? this.getVersion(script.id, script.activeVersionId) : this.getLatestVersion(script.id);
+          const node = document.createElement('div');
+          node.className = `tree-node ${this.state.currentScriptId === script.id ? 'active' : ''}`;
+          node.dataset.scriptId = script.id;
+          node.innerHTML = `
+            <button class="tree-script-row" data-action="open-script">
+              <span class="tree-script-left">
+                <span class="caret">${icon('chevron')}</span>
+                ${icon('folder')}
+                <span class="tree-script-name">${baseName(script.name)}</span>
+              </span>
+              <span class="tree-script-meta">${currentVersion ? versionLabel(currentVersion.versionNumber) : 'draft'}</span>
+            </button>
+            <div class="tree-versions">
+              ${versions.length ? '' : '<div class="empty-state" style="padding:0.9rem 1rem; text-align:left;">No versions yet</div>'}
+            </div>
+          `;
+          const row = node.querySelector('[data-action="open-script"]');
+          row.addEventListener('click', () => this.loadScriptVersion(script.id, script.activeVersionId || null));
+          const versionsWrap = node.querySelector('.tree-versions');
+          node.querySelector('.tree-script-row').addEventListener('dblclick', () => node.classList.toggle('expanded'));
+          node.querySelector('.caret').addEventListener('click', (e) => {
+            e.stopPropagation();
+            node.classList.toggle('expanded');
+          });
+          versions.forEach(v => {
+            const versionEl = document.createElement('button');
+            const activeTab = this.getActiveTab();
+            versionEl.className = `tree-version-row ${v.id === (activeTab ? activeTab.versionId : null) ? 'current' : ''} ${v.published ? 'published' : ''}`;
+            const rp = this.state.restorePoints.find(r => r.versionId === v.id);
+            versionEl.innerHTML = `
+              <span class="tree-version-left">
+                ${icon('file')}
+                <span class="tree-version-name">${baseName(script.name)}(${versionLabel(v.versionNumber)})</span>
+              </span>
+              <span class="tree-version-meta">${rp ? '★' : ''} ${formatAmsterdamDisplay(new Date(v.createdAt))}</span>
+            `;
+            versionEl.addEventListener('click', () => {
+              node.classList.add('expanded');
+              this.loadScriptVersion(script.id, v.id);
+            });
+            versionsWrap.appendChild(versionEl);
+          });
+          if (this.state.currentScriptId === script.id) node.classList.add('expanded');
+          tree.appendChild(node);
+        }
+      },
+
+      async refreshMarketplace(force = false) {
+        const query = (document.getElementById('market-search-input').value || '').trim();
+        this.state.marketQuery = query;
+        if (force || !this.state.marketplaceInitialized) {
+          this.state.marketLoading = true;
+          showStatusPill('Loading marketplace…', 'warning');
+          try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${GITHUB_BRANCH}?recursive=1`, {
+              headers: { 'Accept': 'application/vnd.github+json' }
+            });
+            if (!res.ok) throw new Error(`GitHub tree request failed (${res.status})`);
+            const data = await res.json();
+            const allFiles = (data.tree || []).filter(item => item.type === 'blob');
+            const pyFiles = allFiles.filter(item => item.path.endsWith('.py'));
+            
+            for (const item of pyFiles) {
+              const baseName = item.name.replace(/\.py$/i, '');
+              const dir = item.path.substring(0, item.path.lastIndexOf('/') + 1);
+              
+              const pngPath = `${dir}${baseName}.png`;
+              const jpgPath = `${dir}${baseName}.jpg`;
+              const hasPng = allFiles.some(f => f.path === pngPath);
+              const hasJpg = !hasPng && allFiles.some(f => f.path === jpgPath);
+              
+              if (hasPng) {
+                item.iconUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${pngPath}`;
+              } else if (hasJpg) {
+                item.iconUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${jpgPath}`;
+              }
+            }
+
+            const filesToFetch = pyFiles.slice(0, 30);
+            await Promise.allSettled(filesToFetch.map(async (item) => {
+              try {
+                const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${item.path}`);
+                if (res.ok) {
+                  const text = await res.text();
+                  const firstLine = text.split('\n')[0].trim();
+                  if (firstLine.startsWith('#')) {
+                    item.description = firstLine.substring(1).trim();
+                  } else {
+                    item.description = '';
+                  }
+                }
+              } catch (e) {
+                item.description = '';
+              }
+            }));
+
+            this.state.marketCache = pyFiles;
+            this.state.marketplaceInitialized = true;
+            showStatusPill(`${pyFiles.length} scripts available`, 'success');
+          } catch (e) {
+            this.state.marketCache = [];
+            showStatusPill('Marketplace unavailable', 'error');
+          } finally {
+            this.state.marketLoading = false;
+          }
+        }
+        this.renderMarketplace();
+      },
+
+      renderMarketplace() {
+        const results = document.getElementById('market-results');
+        const q = (this.state.marketQuery || '').toLowerCase();
+        const items = this.state.marketCache.filter(item => !q || item.name.toLowerCase().includes(q) || item.path.toLowerCase().includes(q));
+        results.innerHTML = '';
+        if (!this.state.marketCache.length) {
+          results.innerHTML = '<div class="empty-state">No marketplace scripts found yet.</div>';
+          return;
+        }
+        if (!items.length) {
+          results.innerHTML = '<div class="empty-state">No results matched your search.</div>';
+          return;
+        }
+        items.slice(0, 50).forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'market-card';
+          
+          const iconHtml = item.iconUrl ? `<img src="${item.iconUrl}" style="width:20px;height:20px;border-radius:4px;object-fit:cover;margin-right:8px;" alt="icon">` : '';
+          const descHtml = item.description ? `<div class="market-subtitle">${item.description}</div>` : '';
+          
+          card.innerHTML = `
+            <div class="market-row">
+              <div style="min-width:0; display:flex; align-items:center;">
+                ${iconHtml}
+                <div style="min-width:0;">
+                  <div class="market-title">${item.name}</div>
+                  ${descHtml}
+                </div>
+              </div>
+              <button class="market-action" title="Load script" aria-label="Load script">${icon('eye')}</button>
+            </div>
+          `;
+          card.querySelector('.market-action').addEventListener('click', () => this.loadMarketplaceScript(item));
+          results.appendChild(card);
+        });
+      },
+
+      async loadMarketplaceScript(item) {
+        try {
+          showNotification('Loading marketplace script…', 'info');
+          const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${item.path}`;
+          const res = await fetch(rawUrl);
+          if (!res.ok) throw new Error(`Unable to load script (${res.status})`);
+          const content = await res.text();
+          const tabId = this.openRemoteTab(item.name, content);
+          await this.setActiveTab(tabId, { force: true });
+          showNotification('Marketplace script opened', 'success');
+        } catch (e) {
+          showNotification('Marketplace load failed: ' + e.message, 'error');
+        }
+      },
+
+      async publishActiveScript() {
+        const tab = this.getActiveTab();
+        if (!tab || tab.readOnly || !tab.scriptId) {
+          showNotification('Open a local script before publishing', 'warning');
+          return;
+        }
+        const script = this.getScript(tab.scriptId);
+        if (!script) return;
+        
+        if (tab.dirty) {
+          await this.saveVersion({ silent: true, force: true });
+        }
+        
+        const activeVersion = script.activeVersionId ? await dbGet('versions', script.activeVersionId) : null;
+        if (!activeVersion) {
+          showNotification('Save a version first, then publish', 'warning');
+          return;
+        }
+
+        const endpoint = "https://db-5-nmwrks-tkn-pldr.vercel.app/api/upload";
+        const content = this.state.editor.getValue();
+        const rawName = (script.name || "").trim();
+        
+        const timestampName = (() => {
+          const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Europe/Amsterdam",
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          }).formatToParts(new Date());
+          const pick = (type) => parts.find((p) => p.type === type)?.value || "";
+          return `${Number(pick("day"))}-${Number(pick("month"))}-${pick("year")}-${pick("hour")}:${pick("minute")}`;
+        })();
+
+        const filename = rawName ? rawName.replace(/\.py$/i, "") + ".py" : `${timestampName}.py`;
+
+        try {
+          showNotification('Publishing script...', 'info');
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename,
+              content,
+              commitMessage: `Publish ${filename}`
+            })
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Publish failed");
+          
+          activeVersion.published = true;
+          activeVersion.publishedAt = new Date().toISOString();
+          activeVersion.publishedPath = filename;
+          await dbPut('versions', activeVersion);
+          script.published = true;
+          script.publishedAt = activeVersion.publishedAt;
+          await dbPut('scripts', script);
+          
+          this.state.versions = await dbGetAll('versions');
+          this.state.scripts = await dbGetAll('scripts');
+          this.renderExplorer();
+          showNotification(`Published successfully: ${filename}`, 'success');
+          
+          const btn = document.getElementById('btn-publish');
+          btn.innerHTML = icon('check');
+          setTimeout(() => setIconButton(btn, 'cloud'), 1400);
+        } catch (e) {
+          showNotification('Publish failed: ' + e.message, 'error');
+          const btn = document.getElementById('btn-publish');
+          btn.innerHTML = icon('warning');
+          setTimeout(() => setIconButton(btn, 'cloud'), 1400);
+        }
+      },
+
+      async exportAll() {
+        showNotification('Generating backup ZIP...', 'info');
+        const zip = new JSZip();
+        const scripts = await dbGetAll('scripts');
+        const versions = await dbGetAll('versions');
+        const restorePoints = await dbGetAll('restorePoints');
+        const manifest = {
+          application: 'DUB5 Python Version Manager',
+          exportedAt: new Date().toISOString(),
+          scripts: scripts.map(s => ({ id: s.id, name: s.name })),
+          versions: versions.map(v => ({ id: v.id, scriptId: v.scriptId, versionNumber: v.versionNumber, displayName: v.displayName })),
+          restorePoints: restorePoints.map(rp => ({ id: rp.id, scriptId: rp.scriptId, versionId: rp.versionId, name: rp.name }))
+        };
+        zip.file('README.txt', `DUB5 Python Version Manager Backup\n====================================\nExported: ${new Date().toISOString()}\n\nThis archive contains:\n- manifest.json: Metadata about scripts, versions, and restore points.\n- scripts/: The latest version of each script.\n- versions/: All historical versions of each script.\n- restore-points/: Metadata about restore points.\n`);
+        zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+        const scriptsFolder = zip.folder('scripts');
+        const versionsFolder = zip.folder('versions');
+        const rpFolder = zip.folder('restore-points');
+        for (const script of scripts) {
+          const scriptVersions = versions.filter(v => v.scriptId === script.id).sort((a, b) => b.versionNumber - a.versionNumber);
+          const latestVersion = scriptVersions[0];
+          if (latestVersion) scriptsFolder.file(script.name, latestVersion.sourceCode);
+          const vFolder = versionsFolder.folder(baseName(script.name));
+          for (const v of scriptVersions) {
+            const paddedNum = String(v.versionNumber).padStart(3, '0');
+            const safeName = (v.displayName || `Version ${v.versionNumber}`).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            vFolder.file(`${paddedNum}-${safeName}.py`, v.sourceCode);
+          }
+        }
+        rpFolder.file('restore-points.json', JSON.stringify(restorePoints, null, 2));
+        try {
+          const content = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(content);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `dub5-backup-${new Date().toISOString().split('T')[0]}.zip`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showNotification('Backup exported successfully', 'success');
+        } catch (e) {
+          showNotification('Export failed: ' + e.message, 'error');
+        }
+      },
+
+      updateUI() {
+        const indicator = document.getElementById('unsaved-indicator');
+        indicator.classList.toggle('hidden', !this.state.unsavedChanges);
+        const activeTab = this.getActiveTab();
+        const btnSave = document.getElementById('btn-save-version');
+        const btnPublish = document.getElementById('btn-publish');
+        const btnUpload = document.getElementById('btn-upload');
+        const scriptInput = document.getElementById('script-name-input');
+        const readOnlyHint = document.getElementById('readonly-hint');
+        if (!activeTab) {
+          btnSave.disabled = true;
+          btnPublish.disabled = true;
+          btnUpload.disabled = true;
+          scriptInput.disabled = true;
+          readOnlyHint.classList.add('hidden');
+        } else {
+          btnSave.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+          btnPublish.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+          btnUpload.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+          scriptInput.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+          readOnlyHint.classList.toggle('hidden', !activeTab.readOnly);
+        }
+      },
+
+      showModal(title, fields, onSubmit) {
+        const root = document.getElementById('modal-root');
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        const fieldsHtml = fields.map(f => `
+          <label for="modal-${f.id}">${f.label}</label>
+          <input type="${f.type}" id="modal-${f.id}" class="modal-input" placeholder="${f.placeholder || ''}" value="${f.value || ''}">
+        `).join('');
+        overlay.innerHTML = `
+          <div class="modal">
+            <h3>${title}</h3>
+            ${fieldsHtml}
+            <div class="modal-actions">
+              <button class="btn-cancel">Cancel</button>
+              <button class="primary btn-submit">Confirm</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(overlay);
+        overlay.querySelector('.btn-cancel').onclick = () => overlay.remove();
+        overlay.querySelector('.btn-submit').onclick = async () => {
+          const data = {};
+          fields.forEach(f => {
+            data[f.id] = document.getElementById(`modal-${f.id}`).value;
+          });
+          try {
+            await onSubmit(data);
+            overlay.remove();
+          } catch (e) {
+            showNotification(e.message || 'Action failed', 'error');
+          }
+        };
+        const first = overlay.querySelector('.modal-input');
+        if (first) first.focus();
+      }
+    };
+
+    window.app = app;
+    app.init();
+  </script>
+</body>
+</html>
