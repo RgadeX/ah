@@ -1,2085 +1,2470 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DUB5 - Numworks Scripts Manager</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
-
-  <!-- CodeMirror -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
-
-  <!-- JSZip -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-  <style>
-    :root {
-      --bg-grad-top: #000044;
-      --bg-grad-mid: #000033;
-      --bg-grad-bottom: #000066;
-      --foreground: #FFFFFF;
-      --accent-heading: #E0F2FE;
-      --panel: rgba(255, 255, 255, 0.05);
-      --panel-hover: rgba(255, 255, 255, 0.1);
-      --panel-strong-hover: rgba(255, 255, 255, 0.22);
-      --border: rgba(255, 255, 255, 0.2);
-      --muted: rgba(255, 255, 255, 0.5);
-      --label: rgba(255, 255, 255, 0.8);
-      --badge-alert: #EF4444;
-      --modal-grad-top: #000055;
-      --modal-grad-bottom: #000044;
-      --modal-scrim: rgba(0, 0, 0, 0.8);
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --info: #60a5fa;
-
-      --font-serif: 'DM Serif Display', serif;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-
-      --radius-sm: 0.5rem;
-      --radius-lg: 1rem;
-      --radius-pill: 9999px;
-      --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; }
-
-    ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
-    * { scrollbar-width: none; -ms-overflow-style: none; }
-    .CodeMirror-vscrollbar, .CodeMirror-hscrollbar { display: none !important; }
-    .CodeMirror-scroll { overflow: auto !important; -ms-overflow-style: none; scrollbar-width: none; }
-    .CodeMirror-scroll::-webkit-scrollbar { display: none; }
-
-    body {
-      font-family: var(--font-sans);
-      background:
-        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08) 0 1px, transparent 1.2px) 0 0 / 120px 120px,
-        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.07) 0 1px, transparent 1.2px) 0 0 / 180px 180px,
-        linear-gradient(to bottom, var(--bg-grad-top), var(--bg-grad-mid), var(--bg-grad-bottom));
-      color: var(--foreground);
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
-      isolation: isolate;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.7) 0 0.8px, transparent 1.4px),
-        radial-gradient(circle at 28% 70%, rgba(255,255,255,0.65) 0 1px, transparent 1.7px),
-        radial-gradient(circle at 45% 25%, rgba(255,255,255,0.5) 0 0.7px, transparent 1.4px),
-        radial-gradient(circle at 63% 15%, rgba(255,255,255,0.8) 0 1px, transparent 1.8px),
-        radial-gradient(circle at 78% 50%, rgba(255,255,255,0.6) 0 0.8px, transparent 1.5px),
-        radial-gradient(circle at 90% 82%, rgba(255,255,255,0.75) 0 1px, transparent 1.8px);
-      opacity: 0.9;
-      mix-blend-mode: screen;
-      animation: starfieldPulse 3s ease-in-out infinite alternate;
-      z-index: 0;
-    }
-
-    @keyframes starfieldPulse {
-      from { opacity: 0.55; transform: scale(1); }
-      to { opacity: 1; transform: scale(1.015); }
-    }
-
-    .glass, .top-bar, .sidebar-left, .sidebar-right, .editor-area, .modal, .notification, .tab-strip, .tree-node, .market-card, .landing-card {
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-    }
-
-    .hidden { display: none !important; }
-
-    .landing-screen {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      z-index: 50;
-      background: linear-gradient(to bottom, rgba(0,0,68,0.92), rgba(0,0,51,0.92), rgba(0,0,102,0.92));
-    }
-
-    .landing-card {
-      width: min(92vw, 520px);
-      padding: 3rem 2rem 2.25rem;
-      border-radius: 2rem;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.055);
-      box-shadow: 0 30px 90px rgba(0,0,0,0.45);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .landing-card h1 {
-      font-family: var(--font-serif);
-      font-size: clamp(4.8rem, 12vw, 8.2rem);
-      line-height: 0.92;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-      text-shadow: 0 0 24px rgba(224, 242, 254, 0.16);
-    }
-
-    .landing-stars {
-      margin-top: 1rem;
-      font-size: clamp(1.05rem, 2.8vw, 1.5rem);
-      letter-spacing: 0.24em;
-      color: var(--accent-heading);
-      text-shadow: 0 0 14px rgba(224,242,254,0.3);
-    }
-
-    .landing-enter {
-      margin-top: 1.75rem;
-      width: 64px;
-      height: 64px;
-      justify-content: center;
-      display: inline-flex;
-      align-items: center;
-      border-radius: 50%;
-      padding: 0;
-    }
-    
-    .landing-enter svg {
-      fill: white !important;
-      stroke: none !important;
-      width: 28px;
-      height: 28px;
-      margin-left: 4px;
-    }
-
-    .app-shell {
-      position: relative;
-      z-index: 1;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 14px 22px;
-      background: rgba(255, 255, 255, 0.05);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-      z-index: 2;
-    }
-
-    .brand-mini {
-      font-family: var(--font-serif);
-      font-size: clamp(1.25rem, 2vw, 1.75rem);
-      font-weight: 400;
-      letter-spacing: 0.03em;
-      color: var(--foreground);
-      white-space: nowrap;
-      text-shadow: 0 0 18px rgba(224, 242, 254, 0.18);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .brand-mini:hover { opacity: 0.8; }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
-      color: rgba(255,255,255,0.86);
-      padding: 0.5rem 0.85rem;
-      border-radius: 9999px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.16);
-      min-width: 220px;
-      justify-content: center;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--danger);
-      box-shadow: 0 0 0 4px rgba(239,68,68,0.15);
-      flex: 0 0 auto;
-    }
-
-    .status-dot.connected {
-      background: var(--success);
-      box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
-    }
-
-    .status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-items: center;
-    }
-
-    button {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--foreground);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      padding: 0.72rem 0.95rem;
-      border-radius: 0.75rem;
-      cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 600;
-      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    button:hover {
-      background: rgba(255, 255, 255, 0.14);
-      border-color: rgba(255,255,255,0.28);
-      transform: translateY(-1px);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.18);
-    }
-
-    button:active { transform: translateY(0); }
-    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
-
-    button.primary {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.28);
-    }
-
-    button.primary:hover { background: rgba(255,255,255,0.2); }
-
-    .icon-btn {
-      width: 44px;
-      height: 44px;
-      padding: 0;
-      border-radius: 0.95rem;
-    }
-
-    .icon-btn.small {
-      width: 36px;
-      height: 36px;
-      border-radius: 0.8rem;
-    }
-
-    .icon-btn svg,
-    .tab-close svg,
-    .status-pill svg,
-    .market-action svg,
-    .tree-script-left svg,
-    .tree-version-left svg,
-    .tab svg {
-      width: 20px;
-      height: 20px;
-      fill: none;
-      stroke: var(--foreground);
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      flex: 0 0 auto;
-    }
-
-    .main-content {
-      display: grid;
-      grid-template-columns: 280px minmax(0, 1fr) 310px;
-      gap: 1rem;
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-      z-index: 1;
-      padding: 1rem;
-      min-height: 0;
-    }
-
-    .sidebar-left, .sidebar-right, .editor-area {
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.05);
-      box-shadow: var(--shadow-soft);
-      min-height: 0;
-    }
-
-    .sidebar-left, .sidebar-right {
-      border-radius: 1rem;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .editor-area {
-      border-radius: 1rem;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-width: 0;
-    }
-
-    .sidebar-header, .editor-header, .panel-subheader {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.03);
-    }
-
-    .sidebar-header span:first-child, .panel-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--accent-heading);
-    }
-
-    .header-actions, .editor-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .tree-scroll, .market-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-      min-height: 0;
-    }
-
-    .tree-node {
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.04);
-      border-radius: 0.95rem;
-      overflow: hidden;
-      margin-bottom: 10px;
-    }
-
-    .tree-node.active {
-      border-color: rgba(224,242,254,0.35);
-      box-shadow: 0 0 0 1px rgba(224,242,254,0.12), 0 12px 30px rgba(0,0,0,0.2);
-    }
-
-    .tree-script-row, .tree-version-row {
-      width: 100%;
-      border: none;
-      background: transparent;
-      box-shadow: none;
-      justify-content: space-between;
-      text-align: left;
-      border-radius: 0;
-      padding: 0.8rem 0.85rem;
-    }
-
-    .tree-script-row:hover, .tree-version-row:hover {
-      background: rgba(255,255,255,0.08);
-      transform: none;
-      box-shadow: none;
-    }
-
-    .tree-script-left, .tree-version-left {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      min-width: 0;
-    }
-
-    .tree-script-name, .tree-version-name, .market-name {
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tree-script-meta, .tree-version-meta, .market-meta {
-      color: var(--muted);
-      font-size: 0.78rem;
-      white-space: nowrap;
-      flex: 0 0 auto;
-    }
-
-    .tree-versions {
-      border-top: 1px solid rgba(255,255,255,0.12);
-      padding: 0.35rem 0 0.45rem;
-      display: none;
-    }
-
-    .tree-node.expanded .tree-versions { display: block; }
-    .tree-node.expanded .caret { transform: rotate(90deg); }
-
-    .caret {
-      transition: transform 0.18s ease;
-      opacity: 0.85;
-    }
-
-    .tree-version-row {
-      padding-left: 1.7rem;
-      font-weight: 500;
-      color: rgba(255,255,255,0.88);
-    }
-
-    .tree-version-row.current { background: rgba(255,255,255,0.1); }
-    .tree-version-row.published .tree-version-meta { color: rgba(34,197,94,0.9); }
-
-    .empty-state {
-      padding: 1.35rem 1rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.5;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 0.45rem;
-      padding: 0.6rem 0.6rem 0;
-      overflow-x: auto;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.02);
-      min-height: 48px;
-    }
-
-    .tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      border-radius: 0.9rem 0.9rem 0 0;
-      border: 1px solid rgba(255,255,255,0.14);
-      border-bottom: none;
-      padding: 0.65rem 0.8rem;
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.82);
-      min-width: 0;
-      max-width: 240px;
-      flex: 0 0 auto;
-      box-shadow: none;
-    }
-
-    .tab.active {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      transform: translateY(1px);
-    }
-
-    .tab-title {
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 170px;
-    }
-
-    .tab-dirty {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--warning);
-      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
-      flex: 0 0 auto;
-    }
-
-    .tab-close {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      padding: 0;
-      margin-left: 0.25rem;
-      background: transparent;
-      border-color: transparent;
-      color: rgba(255,255,255,0.72);
-      box-shadow: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .tab-close:hover { background: rgba(255,255,255,0.15); }
-    .tab-close svg { width: 14px; height: 14px; stroke: currentColor; }
-
-    .editor-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .script-name-input {
-      background: transparent;
-      border: none;
-      color: var(--foreground);
-      font-size: 1rem;
-      font-weight: 600;
-      flex: 1;
-      outline: none;
-      min-width: 0;
-      text-overflow: ellipsis;
-    }
-
-    .script-name-input:focus {
-      box-shadow: inset 0 -2px 0 rgba(224,242,254,0.35);
-    }
-
-    .unsaved-indicator {
-      color: var(--warning);
-      font-size: 0.82rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      white-space: nowrap;
-      flex: 0 0 auto;
-    }
-
-    .editor-wrap {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .CodeMirror {
-      flex: 1;
-      height: auto !important;
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 14px;
-      background: rgba(0, 0, 0, 0.18);
-      color: #fff;
-    }
-
-    .CodeMirror-gutters {
-      background: rgba(255,255,255,0.03);
-      border-right: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .CodeMirror-linenumber { color: rgba(255,255,255,0.38); }
-    .CodeMirror-cursor { border-left-color: #fff !important; }
-    .CodeMirror-selected { background: rgba(96,165,250,0.2) !important; }
-
-    .market-search {
-      display: flex;
-      gap: 8px;
-      padding: 12px 12px 0;
-    }
-
-    .market-search input, .modal-input {
-      width: 100%;
-      padding: 0.82rem 0.95rem;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.18);
-      color: var(--foreground);
-      border-radius: 0.85rem;
-      outline: none;
-      font-size: 0.95rem;
-    }
-
-    .market-search input::placeholder, .modal-input::placeholder, .script-name-input::placeholder {
-      color: rgba(255,255,255,0.45);
-    }
-
-    .market-search input:focus, .modal-input:focus {
-      border-color: rgba(255,255,255,0.32);
-      background: rgba(255,255,255,0.1);
-    }
-
-    .market-results {
-      padding: 0.75rem 0.8rem 1rem;
-    }
-
-    .market-card {
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.04);
-      border-radius: 0.95rem;
-      padding: 0.9rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .market-card.active { border-color: rgba(224,242,254,0.3); }
-
-    .market-row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .market-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #fff;
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .market-subtitle {
-      margin-top: 0.25rem;
-      font-size: 0.82rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-
-    .market-action {
-      width: 40px;
-      height: 40px;
-      border-radius: 0.85rem;
-      padding: 0;
-      flex: 0 0 auto;
-    }
-
-    #notification-area {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 1000;
-      pointer-events: none;
-    }
-
-    .notification {
-      padding: 12px 15px;
-      border-radius: 0.9rem;
-      color: white;
-      font-weight: 500;
-      font-size: 0.92rem;
-      animation: slideIn 0.25s ease;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.32);
-      max-width: 420px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border: 1px solid rgba(255,255,255,0.16);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-
-    .notification svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      stroke-width: 2.2;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      flex: 0 0 auto;
-    }
-
-    .notification.info { background: rgba(96,165,250,0.95); }
-    .notification.success { background: rgba(34,197,94,0.95); }
-    .notification.error { background: rgba(239,68,68,0.95); }
-    .notification.warning { background: rgba(245,158,11,0.95); color: #000; }
-
-    @keyframes slideIn {
-      from { transform: translateX(120%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: grid;
-      place-items: center;
-      z-index: 2000;
-      padding: 20px;
-    }
-
-    .modal {
-      width: min(92vw, 460px);
-      background: linear-gradient(to bottom, rgba(0,0,85,0.94), rgba(0,0,68,0.94));
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 1rem;
-      padding: 1.25rem;
-      box-shadow: 0 26px 90px rgba(0,0,0,0.45);
-    }
-
-    .modal h3 {
-      margin-bottom: 1rem;
-      font-family: var(--font-serif);
-      font-weight: 400;
-      font-size: 2rem;
-      color: #fff;
-    }
-
-    .modal label {
-      display: block;
-      margin: 0.6rem 0 0.4rem;
-      font-size: 0.84rem;
-      color: var(--label);
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 1rem;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.55rem 0.75rem;
-      border-radius: 9999px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.06);
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.86);
-      margin: 0.75rem 0.8rem 0;
-    }
-
-    .status-pill.success { color: rgba(34,197,94,0.95); }
-    .status-pill.error { color: rgba(239,68,68,0.95); }
-    .status-pill.warning { color: rgba(245,158,11,0.95); }
-    .status-pill svg { width: 14px; height: 14px; }
-
-    .readonly-hint {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-      white-space: nowrap;
-      flex: 0 0 auto;
-    }
-
-    .context-menu {
-      position: fixed;
-      background: rgba(0, 0, 50, 0.95);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 0.5rem;
-      padding: 0.5rem 0;
-      z-index: 3000;
-      min-width: 150px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 26px rgba(0,0,0,0.32);
-    }
-
-    .context-menu-item {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--foreground);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .context-menu-item:hover { background: rgba(255,255,255,0.1); }
-
-    @media (max-width: 1100px) {
-      .main-content { grid-template-columns: 260px minmax(0, 1fr); }
-      .sidebar-right { display: none; }
-    }
-
-    @media (max-width: 860px) {
-      body { overflow: auto; }
-      .app-shell { min-height: 100vh; height: auto; }
-      .top-bar { flex-wrap: wrap; }
-      .status { order: 3; width: 100%; justify-content: center; }
-      .main-content { grid-template-columns: 1fr; height: auto; overflow: visible; }
-      .sidebar-left { order: 2; }
-      .editor-area { order: 1; min-height: 70vh; }
-      .sidebar-right { display: flex; order: 3; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUB5 - Numworks Scripts Manager</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+  :root {
+    --line: rgba(224, 242, 254, 0.16);
+    --line-strong: rgba(224, 242, 254, 0.30);
+    --ink: rgb(226, 240, 255);
+    --ink-dim: rgba(226, 240, 255, 0.60);
+    --ink-faint: rgba(226, 240, 255, 0.38);
+    --glass: rgba(9, 13, 38, 0.62);
+    --glass-hover: rgba(13, 19, 50, 0.72);
+    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    --glass-shadow: 0 18px 40px -26px rgba(0, 0, 0, 1);
+    --glass-blur: blur(16px) saturate(160%);
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #fb7185;
+    --info: #4cc9f0;
+    --r-pill: 999px;
+    --r-panel: 18px;
+    --r-chip: 12px;
+    --dur: 300ms;
+    --ease: ease-in-out;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+
+  ::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
+  .CodeMirror-vscrollbar, .CodeMirror-hscrollbar { display: none !important; }
+  .CodeMirror-scroll { overflow: auto !important; -ms-overflow-style: none; scrollbar-width: none; }
+  .CodeMirror-scroll::-webkit-scrollbar { display: none; }
+
+  body {
+    font-family: var(--font-ui);
+    background: radial-gradient(140% 100% at 50% -10%, #0b1150 0%, #050833 42%, #01030f 100%);
+    color: var(--ink);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    isolation: isolate;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -15%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(42% 34% at 16% 10%, rgba(70, 110, 255, 0.20), transparent 68%),
+      radial-gradient(38% 30% at 86% 16%, rgba(150, 80, 255, 0.15), transparent 66%),
+      radial-gradient(58% 42% at 52% 108%, rgba(0, 130, 230, 0.18), transparent 72%);
+    filter: blur(26px);
+  }
+
+  .stars {
+    position: fixed; inset: 0; z-index: 1;
+    width: 100%; height: 100%; pointer-events: none; display: block;
+  }
+
+  .glass {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .hidden { display: none !important; }
+
+  /* =========================================================
+     LANDING SCREEN — minimal, no gradient on the play button
+     ========================================================= */
+  .landing-screen {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    z-index: 50; padding: 24px;
+  }
+
+  .landing-card {
+    width: min(92vw, 540px);
+    padding: 3.4rem 2.25rem 3.2rem;
+    border-radius: 26px;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-inset), 0 30px 90px -30px rgba(0, 0, 0, 1);
+    text-align: center;
+    opacity: 0;
+    animation: card-in 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .landing-card h1 {
+    font-family: var(--font-display);
+    font-size: clamp(4.8rem, 12vw, 8rem);
+    line-height: 0.92;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: #fff;
+    text-shadow: 0 0 60px rgba(120, 170, 255, 0.28);
+  }
+
+  .landing-stars {
+    margin-top: 1rem;
+    font-size: clamp(1rem, 2.6vw, 1.4rem);
+    letter-spacing: 0.28em;
+    color: rgba(226, 240, 255, 0.9);
+    text-shadow: 0 0 22px rgba(160, 200, 255, 0.45);
+  }
+
+  .landing-tagline {
+    margin-top: 1.2rem;
+    font-size: 0.88rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+  }
+
+  /* ---- Minimal DUB5 play button ---- */
+  .landing-enter {
+    margin-top: 2.25rem;
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #fff;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    box-shadow: var(--glass-inset), var(--glass-shadow);
+    transition:
+      border-color var(--dur) var(--ease),
+      background var(--dur) var(--ease),
+      transform var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+    position: relative;
+  }
+
+  .landing-enter:hover,
+  .landing-enter:focus-visible {
+    background: var(--glass-hover);
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+    outline: none;
+    box-shadow:
+      var(--glass-inset),
+      0 22px 44px -22px rgba(190, 215, 255, 0.35),
+      0 18px 40px -26px rgba(0, 0, 0, 1);
+  }
+
+  .landing-enter:active {
+    transform: translateY(0);
+  }
+
+  .landing-enter:focus-visible {
+    outline: 2px solid rgba(224, 242, 254, 0.8);
+    outline-offset: 3px;
+  }
+
+  .landing-enter svg {
+    width: 26px;
+    height: 26px;
+    margin-left: 4px;
+    fill: currentColor;
+    stroke: none;
+    transition: transform var(--dur) var(--ease);
+  }
+
+  .landing-enter:hover svg {
+    transform: scale(1.06);
+  }
+
+  /* =========================================================
+     APP SHELL
+     ========================================================= */
+  .app-shell {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 22px;
+    background: rgba(6, 9, 28, 0.55);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 1);
+    z-index: 5;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .brand-mini {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2vw, 1.7rem);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--r-pill);
+    transition: background var(--dur) var(--ease);
+  }
+
+  .brand-mini svg { width: 22px; height: 22px; color: rgba(226, 240, 255, 0.85); }
+
+  .status {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.9rem; color: var(--ink);
+    padding: 0.5rem 0.95rem;
+    border-radius: var(--r-pill);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    box-shadow: var(--glass-inset);
+    min-width: 220px;
+    justify-content: center;
+  }
+
+  .status-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.15), 0 0 12px rgba(251, 113, 133, 0.5);
+    flex: 0 0 auto;
+    transition: background 300ms ease, box-shadow 300ms ease;
+  }
+
+  .status-dot.connected {
+    background: var(--success);
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15), 0 0 12px rgba(52, 211, 153, 0.6);
+  }
+
+  .status-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* =========================================================
+     BUTTONS
+     ========================================================= */
+  button {
+    appearance: none; font: inherit;
+    background: var(--glass);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 0.68rem 0.95rem;
+    border-radius: var(--r-chip);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition:
+      transform var(--dur) var(--ease),
+      background var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+    box-shadow: var(--glass-inset);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  button:hover {
+    background: var(--glass-hover);
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--glass-inset), 0 12px 26px -18px rgba(0, 0, 0, 1);
+  }
+
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  button:focus-visible {
+    outline: 2px solid rgba(224, 242, 254, 0.8);
+    outline-offset: 3px;
+  }
+
+  button.primary {
+    background: linear-gradient(180deg, rgba(190, 215, 255, 0.22), rgba(190, 215, 255, 0.08));
+    border-color: rgba(190, 215, 255, 0.45);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  .icon-btn { width: 44px; height: 44px; padding: 0; border-radius: var(--r-chip); }
+  .icon-btn.small { width: 36px; height: 36px; border-radius: 10px; }
+
+  .icon-btn svg, .tab-close svg, .status-pill svg, .market-action svg,
+  .tree-script-left svg, .tree-version-left svg, .tab svg, .notification svg {
+    width: 20px; height: 20px;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex: 0 0 auto;
+  }
+
+  /* =========================================================
+     MAIN GRID
+     ========================================================= */
+  .main-content {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 310px;
+    gap: 1rem;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+    padding: 1rem;
+    min-height: 0;
+  }
+
+  .sidebar-left, .sidebar-right, .editor-area {
+    border: 1px solid var(--line);
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-inset), var(--glass-shadow);
+    min-height: 0;
+  }
+
+  .sidebar-left, .sidebar-right {
+    border-radius: var(--r-panel);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .editor-area {
+    border-radius: var(--r-panel);
+    display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+  }
+
+  .sidebar-header, .editor-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .sidebar-header span:first-child {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.16em;
+    color: rgba(226, 240, 255, 0.75);
+  }
+
+  .header-actions, .editor-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ---------- TREE ---------- */
+  .tree-scroll, .market-scroll {
+    flex: 1; overflow-y: auto; padding: 10px; min-height: 0;
+  }
+
+  .tree-node {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--r-chip);
+    overflow: hidden; margin-bottom: 8px;
+    transition: border-color 220ms ease, box-shadow 220ms ease;
+  }
+
+  .tree-node.active {
+    border-color: rgba(190, 215, 255, 0.55);
+    box-shadow: 0 0 0 2px rgba(190, 215, 255, 0.1), 0 12px 30px -20px rgba(0, 0, 0, 1);
+  }
+
+  .tree-script-row, .tree-version-row {
+    width: 100%; border: none; background: transparent; box-shadow: none;
+    justify-content: space-between; text-align: left;
+    border-radius: 0; padding: 0.75rem 0.85rem;
+    color: var(--ink); font-weight: 600; font-size: 0.88rem;
+  }
+
+  .tree-script-row:hover, .tree-version-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: none; box-shadow: none; border-color: transparent;
+  }
+
+  .tree-script-left, .tree-version-left {
+    display: flex; align-items: center; gap: 0.55rem; min-width: 0;
+  }
+
+  .tree-script-left svg, .tree-version-left svg {
+    width: 16px; height: 16px; color: rgba(226, 240, 255, 0.6);
+  }
+
+  .tree-script-name, .tree-version-name, .market-name {
+    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .tree-script-meta, .tree-version-meta {
+    color: var(--ink-dim); font-size: 0.72rem;
+    white-space: nowrap; flex: 0 0 auto;
+    font-weight: 600; letter-spacing: 0.02em;
+  }
+
+  .tree-versions {
+    border-top: 1px solid var(--line);
+    padding: 0.35rem 0 0.45rem;
+    display: none; background: rgba(0, 0, 0, 0.12);
+  }
+
+  .tree-node.expanded .tree-versions { display: block; }
+  .tree-node.expanded .caret { transform: rotate(90deg); }
+  .caret { transition: transform 0.18s ease; opacity: 0.75; }
+
+  .tree-version-row {
+    padding-left: 1.9rem; font-weight: 500;
+    color: rgba(226, 240, 255, 0.8); font-size: 0.82rem;
+  }
+
+  .tree-version-row.current {
+    background: rgba(190, 215, 255, 0.08);
+    box-shadow: inset 3px 0 0 rgba(190, 215, 255, 0.55);
+  }
+
+  .tree-version-row.published .tree-version-meta { color: rgba(52, 211, 153, 0.95); }
+
+  .empty-state {
+    padding: 1.35rem 1rem; text-align: center;
+    color: var(--ink-dim); font-size: 0.85rem; line-height: 1.55;
+  }
+
+  /* ---------- TABS ---------- */
+  .tabs {
+    display: flex; gap: 0.4rem;
+    padding: 0.6rem 0.6rem 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.015);
+    min-height: 50px;
+  }
+
+  .tab {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    border-radius: 12px 12px 0 0;
+    border: 1px solid var(--line); border-bottom: none;
+    padding: 0.6rem 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(226, 240, 255, 0.75);
+    min-width: 0; max-width: 260px; flex: 0 0 auto;
+    box-shadow: none; font-weight: 600; font-size: 0.82rem;
+  }
+
+  .tab.active {
+    background: var(--glass); color: #fff;
+    border-color: var(--line-strong);
+    transform: translateY(1px);
+    box-shadow: var(--glass-inset);
+  }
+
+  .tab svg { width: 15px; height: 15px; color: rgba(226, 240, 255, 0.55); }
+  .tab.active svg { color: rgba(226, 240, 255, 0.9); }
+
+  .tab-title {
+    min-width: 0; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 180px;
+  }
+
+  .tab-dirty {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--warning);
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
+    flex: 0 0 auto;
+  }
+
+  .tab-close {
+    width: 22px; height: 22px; border-radius: 50%; padding: 0;
+    margin-left: 0.25rem; background: transparent;
+    border-color: transparent; color: rgba(226, 240, 255, 0.6);
+    box-shadow: none; min-width: 0;
+  }
+
+  .tab-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: transparent; transform: none; box-shadow: none;
+  }
+
+  .tab-close svg { width: 12px; height: 12px; }
+
+  /* ---------- EDITOR ---------- */
+  .editor-meta {
+    display: flex; align-items: center; gap: 10px;
+    min-width: 0; flex: 1;
+  }
+
+  .script-name-input {
+    background: transparent; border: none; color: #fff;
+    font-size: 0.98rem; font-weight: 600;
+    flex: 1; outline: none; min-width: 0;
+    text-overflow: ellipsis; padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 200ms ease, box-shadow 200ms ease;
+    font-family: var(--font-ui);
+  }
+
+  .script-name-input::placeholder { color: var(--ink-faint); }
+  .script-name-input:focus {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 -2px 0 rgba(190, 215, 255, 0.5);
+  }
+  .script-name-input:disabled { color: var(--ink-dim); cursor: default; }
+
+  .unsaved-indicator {
+    color: var(--warning); font-size: 0.78rem;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    white-space: nowrap; flex: 0 0 auto; font-weight: 600;
+  }
+
+  .editor-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+  .CodeMirror {
+    flex: 1; height: auto !important;
+    font-family: var(--font-mono); font-size: 13.5px;
+    background: rgba(2, 4, 16, 0.5); color: #e2f0ff; line-height: 1.6;
+  }
+
+  .CodeMirror-gutters {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--line);
+  }
+
+  .CodeMirror-linenumber { color: rgba(226, 240, 255, 0.28); }
+  .CodeMirror-cursor { border-left: 2px solid #cfe3ff !important; }
+  .CodeMirror-selected { background: rgba(96, 165, 250, 0.22) !important; }
+
+  .cm-s-dracula.CodeMirror,
+  .cm-s-dracula .CodeMirror-gutters {
+    background: transparent !important; color: #e2f0ff;
+  }
+
+  .cm-s-dracula .cm-keyword { color: #a78bfa; }
+  .cm-s-dracula .cm-def { color: #4cc9f0; }
+  .cm-s-dracula .cm-string { color: #34d399; }
+  .cm-s-dracula .cm-number { color: #fbbf24; }
+  .cm-s-dracula .cm-comment { color: rgba(226, 240, 255, 0.4); font-style: italic; }
+  .cm-s-dracula .cm-operator { color: #fb7185; }
+  .cm-s-dracula .cm-builtin { color: #4cc9f0; }
+
+  /* ---------- MARKETPLACE ---------- */
+  .market-search { display: flex; gap: 8px; padding: 12px 12px 0; }
+
+  .market-search input, .modal-input {
+    width: 100%; padding: 0.78rem 0.95rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line); color: var(--ink);
+    border-radius: var(--r-chip); outline: none;
+    font-size: 0.9rem; font-family: inherit;
+    transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+  }
+
+  .market-search input::placeholder, .modal-input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .market-search input:focus, .modal-input:focus {
+    border-color: rgba(190, 215, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(190, 215, 255, 0.1);
+  }
+
+  .market-results { padding: 0.75rem 0.8rem 1rem; }
+
+  .market-card {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--r-chip);
+    padding: 0.85rem; margin-bottom: 0.65rem;
+    display: flex; flex-direction: column; gap: 0.7rem;
+    transition: border-color 200ms ease, background 200ms ease;
+  }
+
+  .market-card:hover {
+    border-color: var(--line-strong);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .market-row {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 12px;
+  }
+
+  .market-title {
+    font-size: 0.92rem; font-weight: 700; color: #fff;
+    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .market-subtitle {
+    margin-top: 0.25rem; font-size: 0.78rem;
+    color: var(--ink-dim); line-height: 1.4;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .market-action { width: 38px; height: 38px; border-radius: 10px; padding: 0; flex: 0 0 auto; }
+  .market-action svg { width: 16px; height: 16px; }
+
+  /* ---------- NOTIFICATIONS ---------- */
+  #notification-area {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 1000; pointer-events: none;
+  }
+
+  .notification {
+    padding: 12px 16px; border-radius: var(--r-chip);
+    color: #fff; font-weight: 600; font-size: 0.88rem;
+    animation: slideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: var(--glass-inset), 0 14px 40px -14px rgba(0, 0, 0, 1);
+    max-width: 420px; display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--line); pointer-events: auto;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .notification svg { width: 16px; height: 16px; stroke: currentColor; fill: none; flex: 0 0 auto; }
+  .notification.info { background: linear-gradient(180deg, rgba(76, 201, 240, 0.95), rgba(26, 122, 158, 0.95)); }
+  .notification.success { background: linear-gradient(180deg, rgba(52, 211, 153, 0.95), rgba(15, 155, 108, 0.95)); }
+  .notification.error { background: linear-gradient(180deg, rgba(251, 113, 133, 0.95), rgba(190, 18, 60, 0.95)); }
+  .notification.warning { background: linear-gradient(180deg, rgba(251, 191, 36, 0.95), rgba(180, 83, 9, 0.95)); color: #1a1000; }
+
+  @keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(3, 5, 20, 0.78);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    display: grid; place-items: center;
+    z-index: 2000; padding: 20px;
+    animation: overlay-in 200ms ease;
+  }
+
+  @keyframes overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    width: min(92vw, 480px);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: var(--r-panel);
+    padding: 1.5rem;
+    box-shadow: var(--glass-inset), 0 30px 80px -20px rgba(0, 0, 0, 1);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    animation: card-in 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .modal h3 {
+    margin-bottom: 1.1rem;
+    font-family: var(--font-display); font-weight: 400;
+    font-size: 1.9rem; color: #fff; letter-spacing: 0.01em;
+  }
+
+  .modal label {
+    display: block; margin: 0.6rem 0 0.4rem;
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .modal-checkbox-label {
+    display: flex !important; align-items: center;
+    gap: 0.6rem; margin: 1rem 0 !important;
+    text-transform: none; letter-spacing: 0;
+    font-size: 0.9rem; color: var(--ink);
+    cursor: pointer; font-weight: 500;
+  }
+
+  .modal-checkbox-label input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--info); cursor: pointer;
+  }
+
+  .modal-actions {
+    display: flex; justify-content: flex-end;
+    gap: 10px; margin-top: 1.3rem;
+  }
+
+  /* ---------- STATUS PILL ---------- */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.5rem 0.8rem; border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 0.78rem; font-weight: 600; color: var(--ink);
+    margin: 0.75rem 0.8rem 0;
+  }
+
+  .status-pill.success { color: var(--success); border-color: rgba(52, 211, 153, 0.35); }
+  .status-pill.error { color: var(--danger); border-color: rgba(251, 113, 133, 0.35); }
+  .status-pill.warning { color: var(--warning); border-color: rgba(251, 191, 36, 0.35); }
+  .status-pill svg { width: 14px; height: 14px; }
+
+  /* ---------- READ-ONLY HINT ---------- */
+  .readonly-hint {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 3px 9px; border-radius: var(--r-pill);
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--warning);
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    white-space: nowrap; flex: 0 0 auto;
+  }
+
+  /* ---------- CONTEXT MENU ---------- */
+  .context-menu {
+    position: fixed;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: var(--r-chip);
+    padding: 0.4rem 0; z-index: 3000; min-width: 160px;
+    box-shadow: var(--glass-inset), 0 20px 50px -20px rgba(0, 0, 0, 1);
+    overflow: hidden;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .context-menu-item {
+    padding: 0.65rem 1rem; cursor: pointer;
+    font-size: 0.86rem; font-weight: 600; color: var(--ink);
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: background 160ms ease;
+  }
+
+  .context-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 1100px) {
+    .main-content { grid-template-columns: 260px minmax(0, 1fr); }
+    .sidebar-right { display: none; }
+  }
+
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .app-shell { min-height: 100vh; height: auto; }
+    .top-bar { flex-wrap: wrap; }
+    .status { order: 3; width: 100%; justify-content: center; min-width: 0; }
+    .main-content { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    .sidebar-left { order: 2; }
+    .editor-area { order: 1; min-height: 70vh; }
+    .sidebar-right { display: flex; order: 3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-card, .modal, .notification { animation: none !important; }
+    button, .tab, .tree-node, .market-card, .landing-enter { transition: none !important; }
+  }
+</style>
 </head>
 <body>
-  <section id="landing-screen" class="landing-screen">
-    <div class="landing-card glass">
-      <h1>DUB5</h1>
-      <div class="landing-stars" aria-label="Premium quality rating">★★★★★</div>
-      <button id="btn-enter" class="primary landing-enter" aria-label="Enter the script manager">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+<canvas class="stars" id="stars" aria-hidden="true"></canvas>
+
+<section id="landing-screen" class="landing-screen">
+  <div class="landing-card">
+    <h1>DUB5</h1>
+    <div class="landing-stars" aria-label="Premium quality rating">★★★★★</div>
+    <p class="landing-tagline">Numworks Scripts Manager</p>
+    <button id="btn-enter" class="landing-enter" aria-label="Enter the script manager">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+  </div>
+</section>
+
+<div id="app-shell" class="app-shell hidden">
+  <header class="top-bar">
+    <div class="brand-mini">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 21V13.6C9 13.0399 9 12.7599 9.10899 12.546C9.20487 12.3578 9.35785 12.2049 9.54601 12.109C9.75992 12 10.0399 12 10.6 12H13.4C13.9601 12 14.2401 12 14.454 12.109C14.6422 12.2049 14.7951 12.3578 14.891 12.546C15 12.7599 15 13.0399 15 13.6V21M11.0177 2.764L4.23539 8.03912C3.78202 8.39175 3.55534 8.56806 3.39203 8.78886C3.24737 8.98444 3.1396 9.20478 3.07403 9.43905C3 9.70352 3 9.9907 3 10.5651V17.8C3 18.9201 3 19.4801 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4801 21 18.9201 21 17.8V10.5651C21 9.9907 21 9.70352 20.926 9.43905C20.8604 9.20478 20.7526 8.98444 20.608 8.78886C20.4447 8.56806 20.218 8.39175 19.7646 8.03913L12.9823 2.764C12.631 2.49075 12.4553 2.35412 12.2613 2.3016C12.0902 2.25526 11.9098 2.25526 11.7387 2.3016C11.5447 2.35412 11.369 2.49075 11.0177 2.764Z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>DUB5</span>
     </div>
-  </section>
+    <div class="status" id="calc-status" title="Calculator connection status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text" class="status-label">Not connected</span>
+    </div>
+    <div class="actions">
+      <button id="btn-connect" class="icon-btn" title="Connect calculator" aria-label="Connect calculator"></button>
+      <button id="btn-upload" class="icon-btn" title="Load to calculator" aria-label="Load to calculator"></button>
+      <button id="btn-export" class="icon-btn" title="Export ZIP" aria-label="Export ZIP"></button>
+      <button id="btn-settings" class="icon-btn" title="Settings" aria-label="Settings"></button>
+    </div>
+  </header>
 
-  <div id="app-shell" class="app-shell hidden">
-    <header class="top-bar">
-      <div class="brand-mini" onclick="window.location.href='https://example.com/home'" title="Go to Homepage">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:24px;height:24px;">
-          <path d="M9 21V13.6C9 13.0399 9 12.7599 9.10899 12.546C9.20487 12.3578 9.35785 12.2049 9.54601 12.109C9.75992 12 10.0399 12 10.6 12H13.4C13.9601 12 14.2401 12 14.454 12.109C14.6422 12.2049 14.7951 12.3578 14.891 12.546C15 12.7599 15 13.0399 15 13.6V21M11.0177 2.764L4.23539 8.03912C3.78202 8.39175 3.55534 8.56806 3.39203 8.78886C3.24737 8.98444 3.1396 9.20478 3.07403 9.43905C3 9.70352 3 9.9907 3 10.5651V17.8C3 18.9201 3 19.4801 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4801 21 18.9201 21 17.8V10.5651C21 9.9907 21 9.70352 20.926 9.43905C20.8604 9.20478 20.7526 8.98444 20.608 8.78886C20.4447 8.56806 20.218 8.39175 19.7646 8.03913L12.9823 2.764C12.631 2.49075 12.4553 2.35412 12.2613 2.3016C12.0902 2.25526 11.9098 2.25526 11.7387 2.3016C11.5447 2.35412 11.369 2.49075 11.0177 2.764Z" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>DUB5</span>
+  <main class="main-content">
+    <aside class="sidebar-left">
+      <div class="sidebar-header">
+        <span>Explorer</span>
+        <div class="header-actions">
+          <button id="btn-new-script" class="icon-btn small" title="New script" aria-label="New script"></button>
+          <button id="btn-import-py" class="icon-btn small" title="Import Python file (.py)" aria-label="Import Python file (.py)"></button>
+          <input type="file" id="file-import" accept=".py" style="display:none">
+        </div>
       </div>
-      <div class="status" id="calc-status" title="Calculator connection status">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-text" class="status-label">Not connected</span>
+      <div class="tree-scroll" id="script-tree">
+        <div class="empty-state">No scripts yet</div>
       </div>
-      <div class="actions">
-        <button id="btn-connect" class="icon-btn" title="Connect calculator" aria-label="Connect calculator"></button>
-        <button id="btn-upload" class="icon-btn" title="Load to calculator" aria-label="Load to calculator"></button>
-        <button id="btn-export" class="icon-btn" title="Export ZIP" aria-label="Export ZIP"></button>
-        <button id="btn-settings" class="icon-btn" title="Settings" aria-label="Settings"></button>
+    </aside>
+
+    <section class="editor-area">
+      <div class="editor-header">
+        <div class="editor-meta">
+          <input type="text" id="script-name-input" class="script-name-input" placeholder="" disabled>
+          <span id="unsaved-indicator" class="unsaved-indicator hidden">● Unsaved changes</span>
+          <span id="readonly-hint" class="readonly-hint hidden">Read-only</span>
+        </div>
+        <div class="editor-actions">
+          <button id="btn-save-version" class="icon-btn" title="Save version" aria-label="Save version"></button>
+          <button id="btn-publish" class="icon-btn" title="Publish" aria-label="Publish"></button>
+        </div>
       </div>
-    </header>
+      <div class="tabs" id="tab-strip"></div>
+      <div class="editor-wrap">
+        <textarea id="code-editor"></textarea>
+      </div>
+    </section>
 
-    <main class="main-content">
-      <aside class="sidebar-left">
-        <div class="sidebar-header">
-          <span>Explorer</span>
-          <div class="header-actions">
-            <button id="btn-new-script" class="icon-btn small" title="New script" aria-label="New script"></button>
-            <button id="btn-import-py" class="icon-btn small" title="Import Python file (.py)" aria-label="Import Python file (.py)"></button>
-            <input type="file" id="file-import" accept=".py" style="display:none">
-          </div>
+    <aside class="sidebar-right">
+      <div class="sidebar-header">
+        <span>Marketplace</span>
+        <div class="header-actions">
+          <button id="btn-market-refresh" class="icon-btn small" title="Refresh marketplace" aria-label="Refresh marketplace"></button>
         </div>
-        <div class="tree-scroll" id="script-tree">
-          <div class="empty-state">No scripts yet</div>
-        </div>
-      </aside>
+      </div>
+      <div class="market-search">
+        <input id="market-search-input" type="text" placeholder="Search free scripts">
+        <button id="btn-market-search" class="icon-btn small" title="Search marketplace" aria-label="Search marketplace"></button>
+      </div>
+      <div id="market-status" class="status-pill hidden"></div>
+      <div class="market-scroll" id="market-results">
+        <div class="empty-state">Search the free library of shared scripts.</div>
+      </div>
+    </aside>
+  </main>
+</div>
 
-      <section class="editor-area">
-        <div class="editor-header">
-          <div class="editor-meta">
-            <input type="text" id="script-name-input" class="script-name-input" placeholder="" disabled>
-            <span id="unsaved-indicator" class="unsaved-indicator hidden">● Unsaved changes</span>
-            <span id="readonly-hint" class="readonly-hint hidden">Read-only</span>
-          </div>
-          <div class="editor-actions">
-            <button id="btn-save-version" class="icon-btn" title="Save version" aria-label="Save version"></button>
-            <button id="btn-publish" class="icon-btn" title="Publish" aria-label="Publish"></button>
-          </div>
-        </div>
-        <div class="tabs" id="tab-strip"></div>
-        <div class="editor-wrap">
-          <textarea id="code-editor"></textarea>
-        </div>
-      </section>
+<div id="notification-area"></div>
+<div id="modal-root"></div>
 
-      <aside class="sidebar-right">
-        <div class="sidebar-header">
-          <span>Marketplace</span>
-          <div class="header-actions">
-            <button id="btn-market-refresh" class="icon-btn small" title="Refresh marketplace" aria-label="Refresh marketplace"></button>
-          </div>
-        </div>
-        <div class="market-search">
-          <input id="market-search-input" type="text" placeholder="Search free scripts">
-          <button id="btn-market-search" class="icon-btn small" title="Search marketplace" aria-label="Search marketplace"></button>
-        </div>
-        <div id="market-status" class="status-pill hidden"></div>
-        <div class="market-scroll" id="market-results">
-          <div class="empty-state">Search the free library of shared scripts.</div>
-        </div>
-      </aside>
-    </main>
-  </div>
+<div id="context-menu" class="context-menu hidden">
+  <div class="context-menu-item" data-action="rename">Rename</div>
+  <div class="context-menu-item" data-action="duplicate">Duplicate</div>
+  <div class="context-menu-item" data-action="delete" style="color: var(--danger);">Delete</div>
+</div>
 
-  <div id="notification-area"></div>
-  <div id="modal-root"></div>
-  
-  <div id="context-menu" class="context-menu hidden">
-    <div class="context-menu-item" data-action="rename">Rename</div>
-    <div class="context-menu-item" data-action="duplicate">Duplicate</div>
-    <div class="context-menu-item" data-action="delete" style="color: var(--danger);">Delete</div>
-  </div>
+<!-- =========================================================
+     STARFIELD
+     ========================================================= -->
+<script>
+(function starfield() {
+  const canvas = document.getElementById('stars');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TINTS = [[255,255,255],[205,222,255],[255,236,214],[186,205,255]];
+  const BASE_SIZE = [1.8, 3.2, 6.4, 11];
+  const spriteCache = new Map();
+  let flareSprite = null;
+  let W = 0, H = 0, dpr = 1;
+  let stars = [];
+  let shooting = null;
+  let nextShot = 3200;
+  let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+  let lastT = performance.now();
+  let rafId = null;
 
-  <script>
-    (function createStarfield() {
-      const field = document.createElement('div');
-      field.style.position = 'fixed';
-      field.style.inset = '0';
-      field.style.pointerEvents = 'none';
-      field.style.zIndex = '0';
-      const total = 120;
-      for (let i = 0; i < total; i++) {
-        const star = document.createElement('span');
-        const size = (Math.random() * 1.9 + 0.1).toFixed(2);
-        const x = Math.random() * 100;
-        const y = Math.random() * 100;
-        const duration = (Math.random() * 1.6 + 1.8).toFixed(2);
-        const delay = (Math.random() * 3).toFixed(2);
-        star.style.position = 'absolute';
-        star.style.left = `${x}%`;
-        star.style.top = `${y}%`;
-        star.style.width = `${size}px`;
-        star.style.height = `${size}px`;
-        star.style.borderRadius = '50%';
-        star.style.background = 'rgba(255,255,255,0.95)';
-        star.style.boxShadow = '0 0 8px rgba(224,242,254,0.55)';
-        star.style.animation = `starTwinkle ${duration}s ease-in-out ${delay}s infinite alternate`;
-        field.appendChild(star);
-      }
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes starTwinkle {
-          0% { opacity: 0.22; transform: scale(0.5); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-      `;
-      document.head.appendChild(style);
-      document.body.appendChild(field);
-    })();
-  </script>
+  function getSprite(tint, bucket) {
+    const key = tint + ':' + bucket;
+    const cached = spriteCache.get(key);
+    if (cached) return cached;
+    const radius = [1.5, 2.6, 4.6, 7.4][bucket];
+    const size = Math.max(2, Math.ceil(radius * 2));
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const g = c.getContext('2d');
+    const t = TINTS[tint];
+    const cx = size / 2;
+    const grad = g.createRadialGradient(cx, cx, 0, cx, cx, cx);
+    grad.addColorStop(0.00, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.14, 'rgba(' + t[0] + ',' + t[1] + ',' + t[2] + ',0.80)');
+    grad.addColorStop(0.38, 'rgba(' + t[0] + ',' + t[1] + ',' + t[2] + ',0.20)');
+    grad.addColorStop(0.72, 'rgba(' + t[0] + ',' + t[1] + ',' + t[2] + ',0.04)');
+    grad.addColorStop(1.00, 'rgba(' + t[0] + ',' + t[1] + ',' + t[2] + ',0)');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(cx, cx, cx, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.95)';
+    g.beginPath(); g.arc(cx, cx, Math.max(0.4, cx * 0.15), 0, Math.PI * 2); g.fill();
+    spriteCache.set(key, c);
+    return c;
+  }
 
-  <script type="module">
-    import Numworks from 'https://esm.sh/upsilon.js@1.4.2';
+  function getFlare() {
+    if (flareSprite) return flareSprite;
+    const s = 64;
+    const c = document.createElement('canvas');
+    c.width = s; c.height = s;
+    const g = c.getContext('2d');
+    const mid = s / 2;
+    const h = g.createLinearGradient(0, mid, s, mid);
+    h.addColorStop(0, 'rgba(255,255,255,0)');
+    h.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+    h.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = h; g.fillRect(0, mid - 0.55, s, 1.1);
+    const v = g.createLinearGradient(mid, 0, mid, s);
+    v.addColorStop(0, 'rgba(255,255,255,0)');
+    v.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+    v.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = v; g.fillRect(mid - 0.55, 0, 1.1, s);
+    flareSprite = c;
+    return c;
+  }
 
-    const DB_NAME = 'DUB5VersionManager';
-    const DB_VERSION = 2;
+  function build() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const density = Math.round((W * H) / 1500);
+    const count = Math.min(1500, Math.max(420, density));
+    stars = [];
+    for (let i = 0; i < count; i++) {
+      const roll = Math.random();
+      let bucket = 0;
+      if (roll > 0.9955) bucket = 3;
+      else if (roll > 0.972) bucket = 2;
+      else if (roll > 0.85) bucket = 1;
+      stars.push({
+        x: Math.random() * W, y: Math.random() * H,
+        depth: 0.25 + Math.random() * 0.75, bucket: bucket,
+        tint: [0,0,0,1,3,2][Math.floor(Math.random() * 6)],
+        base: 0.28 + Math.random() * 0.62,
+        speed: 0.35 + Math.random() * 1.5,
+        phase: Math.random() * Math.PI * 2,
+        angle: Math.random() * Math.PI,
+        hasFlare: bucket === 3
+      });
+    }
+  }
 
-    const GITHUB_OWNER = 'RgadeX';
-    const GITHUB_REPO = 'ah';
-    const GITHUB_BRANCH = 'main';
-    const GITHUB_TOKEN = 'PASTE_YOUR_GITHUB_SECRET_TOKEN_HERE';
-
-    const ICONS = {
-      plug: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 9H19M15 18V15M9 18H9.01M12 18H12.01M12 15H12.01M9 15H9.01M15 12H15.01M12 12H12.01M9 12H9.01M8.2 21H15.8C16.9201 21 17.4802 21 17.908 20.782C18.2843 20.5903 18.5903 20.2843 18.782 19.908C19 19.4802 19 18.9201 19 17.8V6.2C19 5.0799 19 4.51984 18.782 4.09202C18.5903 3.71569 18.2843 3.40973 17.908 3.21799C17.4802 3 16.9201 3 15.8 3H8.2C7.0799 3 6.51984 3 6.09202 3.21799C5.71569 3.40973 5.40973 3.71569 5.21799 4.09202C5 4.51984 5 5.07989 5 6.2V17.8C5 18.9201 5 19.4802 5.21799 19.908C5.40973 20.2843 5.71569 20.5903 6.09202 20.782C6.51984 21 7.07989 21 8.2 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-      upload: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" stroke="none"><path d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4z"/><path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-4z"/></svg>`,
-      zip: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a1 1 0 0 1 1 1v10.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414L11 13.586V3a1 1 0 0 1 1-1zM5 17a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z" fill="currentColor"/></svg>`,
-      plus: `<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>`,
-      import: `<svg viewBox="0 0 24 24"><path d="M12 16V4"></path><path d="M8 8l4-4 4 4"></path><path d="M5 20h14"></path></svg>`,
-      save: `<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v6h7V4"></path><path d="M8 20v-6h8v6"></path></svg>`,
-      cloud: `<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 5 5 0 0 0-9.7-1.3A4 4 0 0 0 7 18z"></path><path d="M12 12v6"></path><path d="M9.5 14.5L12 12l2.5 2.5"></path></svg>`,
-      search: `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-3.5-3.5"></path></svg>`,
-      refresh: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.793 2.293a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L14.086 7H12.5C8.952 7 6 9.952 6 13.5S8.952 20 12.5 20s6.5-2.952 6.5-6.5a1 1 0 1 1 2 0c0 4.652-3.848 8.5-8.5 8.5S4 18.152 4 13.5 7.848 5 12.5 5h1.586l-1.293-1.293a1 1 0 0 1 0-1.414z" fill="currentColor"/></svg>`,
-      chevron: `<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg>`,
-      folder: `<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H3z"></path></svg>`,
-      file: `<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path></svg>`,
-      close: `<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>`,
-      check: `<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>`,
-      warning: `<svg viewBox="0 0 24 24"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 4.9l-7.4 12.8A2 2 0 0 0 4.6 21h14.8a2 2 0 0 0 1.7-3.3L13.7 4.9a2 2 0 0 0-3.4 0z"></path></svg>`,
-      spark: `<svg viewBox="0 0 24 24"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z"></path></svg>`,
-      settings: `<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
-      eye: `<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
+  function spawnShooting() {
+    const goLeft = Math.random() > 0.5;
+    const speed = 380 + Math.random() * 320;
+    shooting = {
+      x: W * (0.15 + Math.random() * 0.7),
+      y: H * (0.05 + Math.random() * 0.35),
+      vx: (goLeft ? -1 : 1) * speed * 0.85,
+      vy: speed * 0.45, life: 0, max: 0.9 + Math.random() * 0.5
     };
+  }
 
-    function icon(name) { return ICONS[name] || ''; }
-    function setIconButton(el, name) { el.innerHTML = icon(name); }
-
-    function generateUUID() { return crypto.randomUUID(); }
-
-    async function sha256(message) {
-      const msgBuffer = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  function draw(now) {
+    const t = now / 1000;
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    ctx.clearRect(0, 0, W, H);
+    mouseX += (targetX - mouseX) * 0.045;
+    mouseY += (targetY - mouseY) * 0.045;
+    const px = mouseX * 16, py = mouseY * 16;
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const twinkle = 0.7 + 0.3 * Math.sin(t * s.speed + s.phase);
+      const alpha = Math.min(1, s.base * twinkle);
+      const size = BASE_SIZE[s.bucket] * (0.6 + s.depth * 0.8);
+      const x = s.x + px * s.depth;
+      const y = s.y + py * s.depth;
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(getSprite(s.tint, s.bucket), x - size / 2, y - size / 2, size, size);
+      if (s.hasFlare) {
+        const fs = size * 6;
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(s.angle);
+        ctx.drawImage(getFlare(), -fs / 2, -fs / 2, fs, fs);
+        ctx.restore();
+      }
     }
-
-    function getAmsterdamParts(date = new Date()) {
-      const dtf = new Intl.DateTimeFormat('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-      const parts = dtf.formatToParts(date);
-      const get = (type) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
-      return { day: get('day'), month: get('month'), year: get('year'), hour: get('hour'), minute: get('minute') };
+    ctx.globalAlpha = 1;
+    if (!reduceMotion) {
+      if (!shooting) {
+        nextShot -= dt * 1000;
+        if (nextShot <= 0) { spawnShooting(); nextShot = 7000 + Math.random() * 12000; }
+      } else {
+        const p = shooting;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.life += dt;
+        const tailX = p.x - p.vx * 0.13;
+        const tailY = p.y - p.vy * 0.13;
+        const fade = Math.max(0, 1 - p.life / p.max);
+        const grad = ctx.createLinearGradient(p.x, p.y, tailX, tailY);
+        grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+        grad.addColorStop(0.35, 'rgba(190,220,255,0.32)');
+        grad.addColorStop(1, 'rgba(190,220,255,0)');
+        ctx.globalAlpha = fade;
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.stroke();
+        ctx.globalAlpha = fade * 0.85;
+        ctx.drawImage(getSprite(0, 3), p.x - 8, p.y - 8, 16, 16);
+        ctx.globalAlpha = 1;
+        if (p.life > p.max || p.x < -300 || p.x > W + 300 || p.y > H + 300) shooting = null;
+      }
     }
+  }
 
-    function formatAmsterdamFilename(date = new Date()) {
-      const p = getAmsterdamParts(date);
-      return `${p.day}-${p.month}-${p.year}-${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
-    }
+  function loop(now) { draw(now); rafId = requestAnimationFrame(loop); }
+  function start() {
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    lastT = performance.now();
+    if (reduceMotion) { draw(performance.now()); rafId = null; return; }
+    rafId = requestAnimationFrame(loop);
+  }
+  function stop() { if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; } }
 
-    function formatAmsterdamDisplay(date = new Date()) {
-      const p = getAmsterdamParts(date);
-      return `${p.day}-${p.month}-${p.year} ${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
-    }
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { build(); if (reduceMotion) draw(performance.now()); }, 140);
+  });
+  window.addEventListener('pointermove', function (e) {
+    targetX = (e.clientX / W) * 2 - 1;
+    targetY = (e.clientY / H) * 2 - 1;
+  }, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    if (reduceMotion) return;
+    if (document.hidden) stop(); else start();
+  });
+  build(); start();
+})();
+</script>
 
-    function defaultScriptName() { return `${formatAmsterdamFilename()}.py`; }
+<!-- =========================================================
+     MAIN APP
+     ========================================================= -->
+<script type="module">
+import Numworks from 'https://esm.sh/upsilon.js@1.4.2';
 
-    function ensurePyExtension(name) {
-      let n = (name || '').trim();
-      if (!n) return defaultScriptName();
-      if (!/\.py$/i.test(n)) n += '.py';
-      return n;
-    }
+const DB_NAME = 'DUB5VersionManager';
+const DB_VERSION = 2;
+const GITHUB_OWNER = 'RgadeX';
+const GITHUB_REPO = 'ah';
+const GITHUB_BRANCH = 'main';
 
-    function versionLabel(versionNumber) { return `v1.${Math.max(0, versionNumber - 1)}`; }
+const ICONS = {
+  plug: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 9H19M15 18V15M9 18H9.01M12 18H12.01M12 15H12.01M9 15H9.01M15 12H15.01M12 12H12.01M9 12H9.01M8.2 21H15.8C16.9201 21 17.4802 21 17.908 20.782C18.2843 20.5903 18.5903 20.2843 18.782 19.908C19 19.4802 19 18.9201 19 17.8V6.2C19 5.0799 19 4.51984 18.782 4.09202C18.5903 3.71569 18.2843 3.40973 17.908 3.21799C17.4802 3 16.9201 3 15.8 3H8.2C7.0799 3 6.51984 3 6.09202 3.21799C5.71569 3.40973 5.40973 3.71569 5.21799 4.09202C5 4.51984 5 5.07989 5 6.2V17.8C5 18.9201 5 19.4802 5.21799 19.908C5.40973 20.2843 5.71569 20.5903 6.09202 20.782C6.51984 21 7.07989 21 8.2 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  upload: '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" stroke="none"><path d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4z"/><path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-4z"/></svg>',
+  zip: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 1 1 1v10.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414L11 13.586V3a1 1 0 0 1 1-1zM5 17a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>',
+  import: '<svg viewBox="0 0 24 24"><path d="M12 16V4"></path><path d="M8 8l4-4 4 4"></path><path d="M5 20h14"></path></svg>',
+  save: '<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v6h7V4"></path><path d="M8 20v-6h8v6"></path></svg>',
+  cloud: '<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 5 5 0 0 0-9.7-1.3A4 4 0 0 0 7 18z"></path><path d="M12 12v6"></path><path d="M9.5 14.5L12 12l2.5 2.5"></path></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-3.5-3.5"></path></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.793 2.293a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L14.086 7H12.5C8.952 7 6 9.952 6 13.5S8.952 20 12.5 20s6.5-2.952 6.5-6.5a1 1 0 1 1 2 0c0 4.652-3.848 8.5-8.5 8.5S4 18.152 4 13.5 7.848 5 12.5 5h1.586l-1.293-1.293a1 1 0 0 1 0-1.414z"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg>',
+  folder: '<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H3z"></path></svg>',
+  file: '<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path></svg>',
+  close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>',
+  warning: '<svg viewBox="0 0 24 24"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 4.9l-7.4 12.8A2 2 0 0 0 4.6 21h14.8a2 2 0 0 0 1.7-3.3L13.7 4.9a2 2 0 0 0-3.4 0z"></path></svg>',
+  spark: '<svg viewBox="0 0 24 24"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z"></path></svg>',
+  settings: '<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+  eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>'
+};
 
-    function makeTabTitle(scriptName, versionNumber) {
-      return versionNumber ? `${scriptName} · ${versionLabel(versionNumber)}` : scriptName;
-    }
+function icon(n) { return ICONS[n] || ''; }
+function setIconButton(el, n) { if (el) el.innerHTML = icon(n); }
 
-    function showNotification(message, type = 'info') {
-      const area = document.getElementById('notification-area');
-      const div = document.createElement('div');
-      div.className = `notification ${type}`;
-      const iconName = type === 'success' ? 'check' : type === 'error' ? 'warning' : type === 'warning' ? 'warning' : 'spark';
-      div.innerHTML = `${icon(iconName)}<span>${message}</span>`;
-      area.appendChild(div);
-      setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 250); }, 3500);
-    }
+function generateUUID() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
-    function showStatusPill(message, type = 'info') {
-      const pill = document.getElementById('market-status');
-      pill.className = `status-pill ${type}`;
-      pill.innerHTML = `${icon(type === 'success' ? 'check' : type === 'error' ? 'warning' : 'spark')}<span>${message}</span>`;
-      pill.classList.remove('hidden');
-      clearTimeout(showStatusPill._timer);
-      showStatusPill._timer = setTimeout(() => pill.classList.add('hidden'), 4000);
-    }
+async function sha256(msg) {
+  const buf = new TextEncoder().encode(msg);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(function(b) {
+    return b.toString(16).padStart(2, '0');
+  }).join('');
+}
 
-    async function openDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('scripts')) db.createObjectStore('scripts', { keyPath: 'id' });
-          if (!db.objectStoreNames.contains('versions')) {
-            const store = db.createObjectStore('versions', { keyPath: 'id' });
-            store.createIndex('scriptId', 'scriptId', { unique: false });
-          }
-          if (!db.objectStoreNames.contains('restorePoints')) {
-            const store = db.createObjectStore('restorePoints', { keyPath: 'id' });
-            store.createIndex('scriptId', 'scriptId', { unique: false });
-          }
-        };
+function amsParts(date) {
+  date = date || new Date();
+  const dtf = new Intl.DateTimeFormat('nl-NL', {
+    timeZone: 'Europe/Amsterdam',
+    day: 'numeric', month: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+  const p = dtf.formatToParts(date);
+  function g(t) { const f = p.find(function(x){ return x.type === t; }); return f ? f.value : '0'; }
+  return { day: g('day'), month: g('month'), year: g('year'), hour: g('hour'), minute: g('minute') };
+}
+
+function amsFilename(date) {
+  const p = amsParts(date);
+  return p.day + '-' + p.month + '-' + p.year + '-' + p.hour + ':' + p.minute;
+}
+
+function amsDisplay(date) {
+  const p = amsParts(date);
+  return p.day + '-' + p.month + '-' + p.year + ' ' + p.hour + ':' + p.minute;
+}
+
+function defaultName() { return amsFilename() + '.py'; }
+
+function ensurePy(n) {
+  n = (n || '').trim();
+  if (!n) return defaultName();
+  if (!/\.py$/i.test(n)) n += '.py';
+  return n;
+}
+
+function vLabel(v) { return 'v1.' + Math.max(0, v - 1); }
+
+function tabTitle(name, v) { return v ? name + ' · ' + vLabel(v) : name; }
+
+function notify(msg, type) {
+  type = type || 'info';
+  const area = document.getElementById('notification-area');
+  const d = document.createElement('div');
+  d.className = 'notification ' + type;
+  const ic = type === 'success' ? 'check' : type === 'error' || type === 'warning' ? 'warning' : 'spark';
+  d.innerHTML = icon(ic) + '<span>' + msg + '</span>';
+  area.appendChild(d);
+  setTimeout(function() { d.style.opacity = '0'; setTimeout(function() { d.remove(); }, 250); }, 3500);
+}
+
+function statusPill(msg, type) {
+  type = type || 'info';
+  const p = document.getElementById('market-status');
+  p.className = 'status-pill ' + type;
+  const ic = type === 'success' ? 'check' : type === 'error' ? 'warning' : 'spark';
+  p.innerHTML = icon(ic) + '<span>' + msg + '</span>';
+  p.classList.remove('hidden');
+  clearTimeout(statusPill._t);
+  statusPill._t = setTimeout(function() { p.classList.add('hidden'); }, 4000);
+}
+
+/* =========================================================
+   IndexedDB
+   ========================================================= */
+function openDB() {
+  return new Promise(function(resolve, reject) {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onerror = function() { reject(req.error); };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('scripts')) db.createObjectStore('scripts', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('versions')) {
+        const s = db.createObjectStore('versions', { keyPath: 'id' });
+        s.createIndex('scriptId', 'scriptId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('restorePoints')) {
+        const s = db.createObjectStore('restorePoints', { keyPath: 'id' });
+        s.createIndex('scriptId', 'scriptId', { unique: false });
+      }
+    };
+  });
+}
+
+function dbAll(store) {
+  return openDB().then(function(db) {
+    return new Promise(function(res, rej) {
+      const tx = db.transaction(store, 'readonly');
+      const r = tx.objectStore(store).getAll();
+      r.onsuccess = function() { res(r.result || []); };
+      r.onerror = function() { rej(r.error); };
+    });
+  });
+}
+
+function dbPut(store, data) {
+  return openDB().then(function(db) {
+    return new Promise(function(res, rej) {
+      const tx = db.transaction(store, 'readwrite');
+      const r = tx.objectStore(store).put(data);
+      r.onsuccess = function() { res(); };
+      r.onerror = function() { rej(r.error); };
+    });
+  });
+}
+
+function dbGet(store, id) {
+  return openDB().then(function(db) {
+    return new Promise(function(res, rej) {
+      const tx = db.transaction(store, 'readonly');
+      const r = tx.objectStore(store).get(id);
+      r.onsuccess = function() { res(r.result); };
+      r.onerror = function() { rej(r.error); };
+    });
+  });
+}
+
+function dbDel(store, id) {
+  return openDB().then(function(db) {
+    return new Promise(function(res, rej) {
+      const tx = db.transaction(store, 'readwrite');
+      const r = tx.objectStore(store).delete(id);
+      r.onsuccess = function() { res(); };
+      r.onerror = function() { rej(r.error); };
+    });
+  });
+}
+
+/* =========================================================
+   Calculator Manager
+   ========================================================= */
+class CalculatorManager {
+  constructor() {
+    this.device = null;
+    this.isConnected = false;
+    this.platformInfo = null;
+  }
+
+  getDeviceLabel() {
+    if (!this.platformInfo) return 'NumWorks';
+    return this.platformInfo.model || this.platformInfo.name || this.platformInfo.device || 'NumWorks';
+  }
+
+  connect() {
+    const self = this;
+    this.device = new Numworks();
+    return new Promise(function(resolve, reject) {
+      self.device.detect(function() {
+        self.device.getPlatformInfo().then(function(info) {
+          self.platformInfo = info;
+          self.isConnected = true;
+          resolve(info);
+          notify('Connected to ' + self.getDeviceLabel(), 'success');
+        }).catch(reject);
+      }, function(err) {
+        self.isConnected = false;
+        notify('Connection failed: ' + (err.message || err), 'error');
+        reject(err);
       });
-    }
+    });
+  }
 
-    async function dbGetAll(storeName) {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const req = tx.objectStore(storeName).getAll();
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => reject(req.error);
+  autoConnect() {
+    const self = this;
+    if (!this.device) this.device = new Numworks();
+    return new Promise(function(resolve) {
+      let done = false;
+      function settle(v) { if (done) return; done = true; resolve(v); }
+      self.device.autoConnect(function() {
+        self.device.stopAutoConnect();
+        self.device.getPlatformInfo().then(function(info) {
+          self.platformInfo = info;
+          self.isConnected = true;
+          settle(info);
+        }).catch(function() { settle(null); });
       });
-    }
+      setTimeout(function() {
+        try { self.device.stopAutoConnect(); } catch(e) {}
+        self.isConnected = false;
+        settle(null);
+      }, 3000);
+    });
+  }
 
-    async function dbPut(storeName, data) {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const req = tx.objectStore(storeName).put(data);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
+  getScripts() {
+    if (!this.isConnected) return Promise.reject(new Error('Not connected'));
+    return this.device.backupStorage().then(function(s) {
+      return (s.records || []).filter(function(r) { return r.type === 'py'; }).map(function(r) {
+        return { name: r.name, code: r.code, autoImport: r.autoImport };
       });
-    }
+    });
+  }
 
-    async function dbGet(storeName, id) {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const req = tx.objectStore(storeName).get(id);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
+  uploadScript(name, code) {
+    const self = this;
+    if (!this.isConnected) return Promise.reject(new Error('Not connected'));
+    return this.device.backupStorage().then(function(storage) {
+      const records = Array.isArray(storage.records) ? storage.records : [];
+      const i = records.findIndex(function(r) { return r.name === name && r.type === 'py'; });
+      const rec = { name: name, type: 'py', autoImport: false, code: code };
+      if (i >= 0) records[i] = rec; else records.push(rec);
+      storage.records = records;
+      return new Promise(function(res, rej) {
+        try { self.device.installStorage(storage, function() { res(); }); } catch(e) { rej(e); }
       });
-    }
+    }).then(function() {
+      return self.device.backupStorage();
+    }).then(function(verify) {
+      const v = (verify.records || []).find(function(r) { return r.name === name && r.type === 'py'; });
+      if (!v || v.code !== code) throw new Error('Verification failed');
+      return true;
+    });
+  }
+}
 
-    async function dbDelete(storeName, id) {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const req = tx.objectStore(storeName).delete(id);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
+/* =========================================================
+   App
+   ========================================================= */
+const app = {
+  state: {
+    scripts: [], versions: [], restorePoints: [],
+    openTabs: [], activeTabId: null, currentScriptId: null,
+    unsavedChanges: false,
+    calc: new CalculatorManager(),
+    editor: null, suppressEditorChange: false,
+    marketCache: [], marketQuery: '', marketplaceInitialized: false,
+    contextMenuTarget: null
+  },
+
+  init: function() {
+    const self = this;
+
+    setIconButton(document.getElementById('btn-connect'), 'plug');
+    setIconButton(document.getElementById('btn-upload'), 'upload');
+    setIconButton(document.getElementById('btn-export'), 'zip');
+    setIconButton(document.getElementById('btn-new-script'), 'plus');
+    setIconButton(document.getElementById('btn-import-py'), 'import');
+    setIconButton(document.getElementById('btn-save-version'), 'save');
+    setIconButton(document.getElementById('btn-publish'), 'cloud');
+    setIconButton(document.getElementById('btn-market-search'), 'search');
+    setIconButton(document.getElementById('btn-market-refresh'), 'refresh');
+    setIconButton(document.getElementById('btn-settings'), 'settings');
+
+    Promise.all([dbAll('scripts'), dbAll('versions'), dbAll('restorePoints')])
+      .then(function(res) {
+        self.state.scripts = res[0];
+        self.state.versions = res[1];
+        self.state.restorePoints = res[2];
+        self.initEditor();
+        self.setupEvents();
+        self.renderExplorer();
+        self.renderTabs();
+        self.updateEditorMeta();
+        self.refreshMarket(true).catch(function() {});
+        self.state.calc.autoConnect().then(function(info) {
+          self.updateCalcStatus(!!info, info);
+        });
+        self.updateUI();
+      })
+      .catch(function(err) {
+        console.error('Init failed:', err);
+        notify('Failed to load local data', 'error');
       });
-    }
+  },
 
-    class CalculatorManager {
-      constructor() {
-        this.device = null;
-        this.isConnected = false;
-        this.platformInfo = null;
+  initEditor: function() {
+    const self = this;
+    this.state.editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+      mode: 'python', theme: 'dracula', lineNumbers: true,
+      tabSize: 4, indentWithTabs: false, lineWrapping: true,
+      viewportMargin: Infinity,
+      extraKeys: {
+        'Ctrl-S': function() { self.saveVersion(); },
+        'Cmd-S': function() { self.saveVersion(); }
       }
+    });
+    const w = this.state.editor.getWrapperElement();
+    w.style.display = 'flex';
+    w.style.flex = '1';
+    w.style.pointerEvents = 'auto';
+    w.addEventListener('click', function() { self.state.editor.focus(); });
 
-      getDeviceLabel() {
-        if (!this.platformInfo) return 'NumWorks';
-        return this.platformInfo.model || this.platformInfo.name || this.platformInfo.device || 'NumWorks';
+    let autosaveT;
+    this.state.editor.on('change', function() {
+      if (self.state.suppressEditorChange) return;
+      const tab = self.getActiveTab();
+      if (!tab || tab.readOnly) return;
+      tab.content = self.state.editor.getValue();
+      tab.dirty = true;
+      self.state.unsavedChanges = true;
+      self.updateUI();
+      self.renderTabs();
+      if (localStorage.getItem('dub5_autosave') === 'true') {
+        clearTimeout(autosaveT);
+        autosaveT = setTimeout(function() {
+          self.saveVersion({ silent: true, force: false });
+        }, 2000);
       }
+    });
+  },
 
-      async connect() {
-        this.device = new Numworks();
-        return new Promise((resolve, reject) => {
-          this.device.detect(async () => {
-            try {
-              this.platformInfo = await this.device.getPlatformInfo();
-              this.isConnected = true;
-              resolve(this.platformInfo);
-              showNotification(`Connected to ${this.getDeviceLabel()}`, 'success');
-            } catch (e) { reject(e); }
-          }, (err) => {
-            this.isConnected = false;
-            showNotification('Connection failed: ' + (err.message || err), 'error');
-            reject(err);
-          });
-        });
-      }
+  setupEvents: function() {
+    const self = this;
 
-      async autoConnect() {
-        if (!this.device) this.device = new Numworks();
-        return new Promise((resolve) => {
-          let finished = false;
-          const settle = (value) => { if (finished) return; finished = true; resolve(value); };
-          this.device.autoConnect(async () => {
-            try {
-              this.device.stopAutoConnect();
-              this.platformInfo = await this.device.getPlatformInfo();
-              this.isConnected = true;
-              settle(this.platformInfo);
-            } catch (_) { settle(null); }
-          });
-          setTimeout(() => {
-            try { this.device.stopAutoConnect(); } catch (_) {}
-            this.isConnected = false;
-            settle(null);
-          }, 3000);
-        });
-      }
-
-      async getScripts() {
-        if (!this.isConnected) throw new Error('Not connected');
-        const storage = await this.device.backupStorage();
-        return (storage.records || []).filter(r => r.type === 'py').map(r => ({ name: r.name, code: r.code, autoImport: r.autoImport }));
-      }
-
-      async uploadScript(name, code) {
-        if (!this.isConnected) throw new Error('Not connected');
-        const storage = await this.device.backupStorage();
-        const records = Array.isArray(storage.records) ? storage.records : [];
-        const existingIndex = records.findIndex(r => r.name === name && r.type === 'py');
-        const newRecord = { name, type: 'py', autoImport: false, code };
-        if (existingIndex >= 0) records[existingIndex] = newRecord;
-        else records.push(newRecord);
-        storage.records = records;
-
-        await new Promise((resolve, reject) => {
-          try { this.device.installStorage(storage, () => resolve()); } catch (e) { reject(e); }
-        });
-
-        const verifyStorage = await this.device.backupStorage();
-        const verifyRecord = (verifyStorage.records || []).find(r => r.name === name && r.type === 'py');
-        if (!verifyRecord || verifyRecord.code !== code) throw new Error('Verification failed: uploaded code does not match.');
-        return true;
-      }
-    }
-
-    const app = {
-      state: {
-        scripts: [], versions: [], restorePoints: [], openTabs: [], activeTabId: null, currentScriptId: null,
-        unsavedChanges: false, calc: new CalculatorManager(), editor: null, suppressEditorChange: false,
-        marketCache: [], marketLoading: false, marketQuery: '', marketplaceInitialized: false, entered: false,
-        contextMenuTarget: null
-      },
-
-      async init() {
-        setIconButton(document.getElementById('btn-connect'), 'plug');
-        setIconButton(document.getElementById('btn-upload'), 'upload');
-        setIconButton(document.getElementById('btn-export'), 'zip');
-        setIconButton(document.getElementById('btn-new-script'), 'plus');
-        setIconButton(document.getElementById('btn-import-py'), 'import');
-        setIconButton(document.getElementById('btn-save-version'), 'save');
-        setIconButton(document.getElementById('btn-publish'), 'cloud');
-        setIconButton(document.getElementById('btn-market-search'), 'search');
-        setIconButton(document.getElementById('btn-market-refresh'), 'refresh');
-        setIconButton(document.getElementById('btn-settings'), 'settings');
-
-        this.state.scripts = await dbGetAll('scripts');
-        this.state.versions = await dbGetAll('versions');
-        this.state.restorePoints = await dbGetAll('restorePoints');
-        this.initEditor();
-        this.setupEventListeners();
-        this.renderExplorer();
-        this.renderTabs();
-        this.updateEditorMeta();
-        await this.refreshMarketplace(true);
-
-        const info = await this.state.calc.autoConnect();
-        if (info) this.updateCalcStatus(true, info);
-        else this.updateCalcStatus(false, null);
-
-        this.updateUI();
-      },
-
-      initEditor() {
-        this.state.editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-          mode: 'python', theme: 'dracula', lineNumbers: true, tabSize: 4, indentWithTabs: false, lineWrapping: true, viewportMargin: Infinity,
-          extraKeys: { 'Ctrl-S': () => this.saveVersion(), 'Cmd-S': () => this.saveVersion() }
-        });
-        this.state.editor.getWrapperElement().style.display = 'flex';
-        this.state.editor.getWrapperElement().style.flex = '1';
-        this.state.editor.getWrapperElement().style.pointerEvents = 'auto';
-        this.state.editor.getWrapperElement().addEventListener('click', () => this.state.editor.focus());
-
-        let autosaveTimeout;
-        this.state.editor.on('change', () => {
-          if (this.state.suppressEditorChange) return;
-          const tab = this.getActiveTab();
-          if (!tab || tab.readOnly) return;
-          tab.content = this.state.editor.getValue();
-          tab.dirty = true;
-          this.state.unsavedChanges = true;
-          this.updateUI();
-          this.renderTabs();
-          if (localStorage.getItem('dub5_autosave') === 'true') {
-            clearTimeout(autosaveTimeout);
-            autosaveTimeout = setTimeout(() => this.saveVersion({ silent: true, force: false }), 2000);
-          }
-        });
-      },
-
-      setupEventListeners() {
-        document.getElementById('btn-enter').addEventListener('click', () => {
-          document.getElementById('landing-screen').classList.add('hidden');
-          document.getElementById('app-shell').classList.remove('hidden');
-          this.state.entered = true;
-          this.state.editor.refresh();
-        });
-
-        document.getElementById('btn-connect').addEventListener('click', async () => {
-          try {
-            const info = await this.state.calc.connect();
-            this.updateCalcStatus(true, info);
-            await this.syncFromCalculator();
-          } catch (e) { this.updateCalcStatus(false, null); }
-        });
-
-        document.getElementById('btn-new-script').addEventListener('click', () => {
-          this.showModal('New script', [{ id: 'script-name', label: 'Filename', type: 'text', placeholder: 'Leave blank for timestamp name' }], async (data) => {
-            const entered = (data['script-name'] || '').trim();
-            const name = ensurePyExtension(entered);
-            if (this.state.scripts.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-              showNotification('That file already exists', 'error'); return;
-            }
-            const script = { id: generateUUID(), name, activeVersionId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), published: false, publishedAt: null };
-            await dbPut('scripts', script);
-            this.state.scripts.push(script);
-            this.renderExplorer();
-            this.openTabForScript(script.id);
-            showNotification('Script created', 'success');
-          });
-        });
-
-        document.getElementById('btn-import-py').addEventListener('click', () => document.getElementById('file-import').click());
-        document.getElementById('file-import').addEventListener('change', async (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const text = await file.text();
-          let name = ensurePyExtension(file.name);
-          if (this.state.scripts.some(s => s.name.toLowerCase() === name.toLowerCase())) name = ensurePyExtension(`${file.name.replace(/\.py$/i, '')}_${formatAmsterdamFilename()}`);
-          const script = { id: generateUUID(), name, activeVersionId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), published: false, publishedAt: null };
-          await dbPut('scripts', script);
-          this.state.scripts.push(script);
-          this.renderExplorer();
-          const tabId = this.openTabForScript(script.id, { content: text, fromImport: true });
-          this.state.activeTabId = tabId;
-          this.setActiveTab(tabId);
-          showNotification('Imported Python file', 'success');
-          e.target.value = '';
-        });
-
-        document.getElementById('script-name-input').addEventListener('change', async (e) => {
-          if (!this.state.currentScriptId) return;
-          const newName = ensurePyExtension(e.target.value.trim());
-          const script = this.state.scripts.find(s => s.id === this.state.currentScriptId);
-          if (!script) return;
-          if (script.name.toLowerCase() === newName.toLowerCase()) { e.target.value = script.name; return; }
-          if (this.state.scripts.some(s => s.id !== script.id && s.name.toLowerCase() === newName.toLowerCase())) {
-            showNotification('Another file already uses that name', 'error'); e.target.value = script.name; return;
-          }
-          script.name = newName;
-          script.updatedAt = new Date().toISOString();
-          await dbPut('scripts', script);
-          this.updateTabLabelsForScript(script.id);
-          this.renderExplorer();
-          e.target.value = script.name;
-          showNotification('Filename updated', 'success');
-        });
-
-        document.getElementById('btn-save-version').addEventListener('click', () => this.saveVersion());
-        document.getElementById('btn-publish').addEventListener('click', () => this.publishActiveScript());
-        document.getElementById('btn-upload').addEventListener('click', () => this.loadActiveTabToCalculator());
-        document.getElementById('btn-export').addEventListener('click', () => this.exportAll());
-        document.getElementById('btn-market-search').addEventListener('click', () => this.refreshMarketplace());
-        document.getElementById('btn-market-refresh').addEventListener('click', () => this.refreshMarketplace(true));
-        document.getElementById('market-search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') this.refreshMarketplace(); });
-        document.getElementById('market-search-input').addEventListener('input', (e) => { this.state.marketQuery = e.target.value; this.renderMarketplace(); });
-
-        document.getElementById('btn-settings').addEventListener('click', () => {
-          const isAutosave = localStorage.getItem('dub5_autosave') === 'true';
-          this.showModal('Settings', [{ id: 'autosave', label: 'Enable Autosave (saves version after 2s of inactivity)', type: 'checkbox', checked: isAutosave }], (data) => {
-            localStorage.setItem('dub5_autosave', data['autosave'] === 'on' ? 'true' : 'false');
-            showNotification('Settings saved', 'success');
-          });
-        });
-
-        document.addEventListener('contextmenu', (e) => {
-          const scriptRow = e.target.closest('.tree-script-row');
-          const versionRow = e.target.closest('.tree-version-row');
-          if (scriptRow) {
-            e.preventDefault();
-            const scriptId = scriptRow.closest('.tree-node').dataset.scriptId;
-            this.showContextMenu(e.clientX, e.clientY, 'script', scriptId);
-          } else if (versionRow) {
-            e.preventDefault();
-            const scriptId = versionRow.closest('.tree-node').dataset.scriptId;
-            const versionId = versionRow.dataset.versionId;
-            this.showContextMenu(e.clientX, e.clientY, 'version', versionId, scriptId);
-          } else {
-            this.hideContextMenu();
-          }
-        });
-
-        document.addEventListener('click', () => this.hideContextMenu());
-
-        const ctxMenu = document.getElementById('context-menu');
-        ctxMenu.addEventListener('click', async (e) => {
-          const action = e.target.closest('.context-menu-item')?.dataset.action;
-          if (!action || !this.state.contextMenuTarget) return;
-          
-          const { type, id, scriptId } = this.state.contextMenuTarget;
-          this.hideContextMenu();
-
-          if (action === 'rename') {
-            const script = this.getScript(scriptId);
-            if (!script) return;
-            const newName = prompt('Enter new filename (with .py):', script.name);
-            if (!newName) return;
-            const ensuredName = ensurePyExtension(newName);
-            if (this.state.scripts.some(s => s.id !== scriptId && s.name.toLowerCase() === ensuredName.toLowerCase())) {
-              showNotification('A script with this name already exists', 'error'); return;
-            }
-            script.name = ensuredName;
-            script.updatedAt = new Date().toISOString();
-            await dbPut('scripts', script);
-            this.updateTabLabelsForScript(scriptId);
-            this.renderExplorer();
-            showNotification('Script renamed', 'success');
-          } else if (action === 'duplicate') {
-            const script = this.getScript(scriptId);
-            if (!script) return;
-            const base = script.name.replace(/\.py$/i, '');
-            let counter = 1;
-            let newName = `${base} (${counter}).py`;
-            while (this.state.scripts.some(s => s.name.toLowerCase() === newName.toLowerCase())) {
-              counter++;
-              newName = `${base} (${counter}).py`;
-            }
-            const newScript = { id: generateUUID(), name: newName, activeVersionId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), published: false, publishedAt: null };
-            await dbPut('scripts', newScript);
-            this.state.scripts.push(newScript);
-            
-            const latestVersion = this.getLatestVersion(scriptId);
-            if (latestVersion) {
-              const newVersion = {
-                id: generateUUID(), scriptId: newScript.id, parentVersionId: null, branchId: 'main', versionNumber: 1,
-                displayName: `${newName} (v1.0)`, commitMessage: 'Duplicated', sourceCode: latestVersion.sourceCode,
-                createdAt: new Date().toISOString(), characterCount: latestVersion.sourceCode.length, lineCount: latestVersion.sourceCode.split('\n').length,
-                sourceHash: await sha256(latestVersion.sourceCode), uploadedToCalculator: false, uploadedAt: null, published: false, publishedAt: null, publishedPath: null
-              };
-              await dbPut('versions', newVersion);
-              this.state.versions.push(newVersion);
-              newScript.activeVersionId = newVersion.id;
-              await dbPut('scripts', newScript);
-            }
-            this.renderExplorer();
-            this.openTabForScript(newScript.id);
-            showNotification(`Duplicated as ${newName}`, 'success');
-          } else if (action === 'delete') {
-            const script = this.getScript(scriptId);
-            if (!script) return;
-            if (!confirm(`Are you sure you want to delete "${script.name}" and all its versions?`)) return;
-            
-            const versions = this.getVersionsForScript(scriptId);
-            for (const v of versions) {
-              await dbDelete('versions', v.id);
-              const rps = this.state.restorePoints.filter(rp => rp.versionId === v.id);
-              for (const rp of rps) await dbDelete('restorePoints', rp.id);
-            }
-            await dbDelete('scripts', scriptId);
-            
-            this.state.scripts = this.state.scripts.filter(s => s.id !== scriptId);
-            this.state.versions = this.state.versions.filter(v => v.scriptId !== scriptId);
-            this.state.restorePoints = this.state.restorePoints.filter(rp => rp.scriptId !== scriptId);
-            
-            const openTab = this.state.openTabs.find(t => t.scriptId === scriptId);
-            if (openTab) this.closeTab(openTab.id);
-            
-            this.renderExplorer();
-            showNotification('Script deleted', 'success');
-          }
-        });
-
-        window.addEventListener('beforeunload', (e) => {
-          if (this.state.unsavedChanges) { e.preventDefault(); e.returnValue = ''; }
-        });
-      },
-
-      showContextMenu(x, y, type, id, scriptId) {
-        this.state.contextMenuTarget = { type, id, scriptId };
-        const menu = document.getElementById('context-menu');
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
-        menu.classList.remove('hidden');
-      },
-
-      hideContextMenu() {
-        this.state.contextMenuTarget = null;
-        document.getElementById('context-menu').classList.add('hidden');
-      },
-
-      getActiveTab() { return this.state.openTabs.find(t => t.id === this.state.activeTabId) || null; },
-      getScript(scriptId) { return this.state.scripts.find(s => s.id === scriptId) || null; },
-      getVersionsForScript(scriptId) { return this.state.versions.filter(v => v.scriptId === scriptId).sort((a, b) => a.versionNumber - b.versionNumber); },
-      getVersion(scriptId, versionId) { return this.state.versions.find(v => v.id === versionId && v.scriptId === scriptId) || null; },
-      getLatestVersion(scriptId) {
-        const versions = this.getVersionsForScript(scriptId);
-        return versions.length ? versions[versions.length - 1] : null;
-      },
-
-      openTabForScript(scriptId, options = {}) {
-        const script = this.getScript(scriptId);
-        if (!script) return null;
-        const version = options.versionId ? this.getVersion(scriptId, options.versionId) : this.getVersion(scriptId, script.activeVersionId) || this.getLatestVersion(scriptId);
-        const tabKey = `${scriptId}:${version ? version.id : 'draft'}:${options.remote ? 'remote' : 'local'}`;
-        const existing = this.state.openTabs.find(t => t.key === tabKey);
-        if (existing) { this.setActiveTab(existing.id); return existing.id; }
-        
-        const tab = {
-          id: generateUUID(), key: tabKey, scriptId, versionId: version ? version.id : null,
-          title: makeTabTitle(script.name, version ? version.versionNumber : null),
-          content: typeof options.content === 'string' ? options.content : (version ? version.sourceCode : ''),
-          dirty: false, remote: !!options.remote, readOnly: !!options.remote, sourceLabel: options.remote ? 'Marketplace' : 'Local'
-        };
-        this.state.openTabs.push(tab);
-        this.setActiveTab(tab.id, { force: true });
-        return tab.id;
-      },
-
-      openRemoteTab(remoteName, content) {
-        const tabKey = `marketplace:${remoteName}`;
-        const existing = this.state.openTabs.find(t => t.key === tabKey);
-        if (existing) { this.setActiveTab(existing.id); return existing.id; }
-        const tab = { id: generateUUID(), key: tabKey, scriptId: null, versionId: null, title: remoteName, content: content || '', dirty: false, remote: true, readOnly: true, sourceLabel: 'Marketplace' };
-        this.state.openTabs.push(tab);
-        this.setActiveTab(tab.id, { force: true });
-        return tab.id;
-      },
-
-      async setActiveTab(tabId, options = {}) {
-        const tab = this.state.openTabs.find(t => t.id === tabId);
-        if (!tab) return;
-        const current = this.getActiveTab();
-        if (current && current.id !== tab.id && !options.force && !current.readOnly) {
-          current.content = this.state.editor.getValue();
-          current.dirty = current.content !== this.getSavedTabContent(current);
+    document.getElementById('btn-enter').addEventListener('click', function() {
+      document.getElementById('landing-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      setTimeout(function() {
+        if (self.state.editor) {
+          self.state.editor.refresh();
+          self.state.editor.focus();
         }
-        this.state.activeTabId = tabId;
-        this.state.currentScriptId = tab.scriptId;
-        await this.refreshEditorForActiveTab();
-        this.renderTabs();
-        this.renderExplorer();
-        this.updateEditorMeta();
-        this.updateUI();
-      },
+      }, 60);
+    });
 
-      getSavedTabContent(tab) {
-        if (!tab) return '';
-        if (tab.remote) return tab.content || '';
-        const script = this.getScript(tab.scriptId);
-        if (!script) return tab.content || '';
-        const version = tab.versionId ? this.getVersion(tab.scriptId, tab.versionId) : null;
-        return version ? version.sourceCode : (tab.content || '');
-      },
+    document.getElementById('btn-connect').addEventListener('click', function() {
+      self.state.calc.connect().then(function(info) {
+        self.updateCalcStatus(true, info);
+        return self.syncFromCalc();
+      }).catch(function() {
+        self.updateCalcStatus(false, null);
+      });
+    });
 
-      async refreshEditorForActiveTab() {
-        const tab = this.getActiveTab();
-        const nameInput = document.getElementById('script-name-input');
-        const readOnlyHint = document.getElementById('readonly-hint');
-        if (!tab) {
-          this.state.editor.setValue('');
-          nameInput.value = '';
-          nameInput.disabled = true;
-          readOnlyHint.classList.add('hidden');
-          this.state.unsavedChanges = false;
-          this.updateUI();
+    document.getElementById('btn-new-script').addEventListener('click', function() {
+      self.showModal('New script', [
+        { id: 'name', label: 'Filename', type: 'text', placeholder: 'Leave blank for timestamp name' }
+      ], function(data) {
+        const name = ensurePy(data['name'] || '');
+        if (self.state.scripts.some(function(s) { return s.name.toLowerCase() === name.toLowerCase(); })) {
+          notify('That file already exists', 'error');
           return;
         }
-        const content = tab.remote ? tab.content : (tab.content ?? '');
-        this.state.suppressEditorChange = true;
-        this.state.editor.setValue(content);
-        this.state.suppressEditorChange = false;
-        nameInput.value = tab.scriptId ? (this.getScript(tab.scriptId)?.name || '') : tab.title;
-        nameInput.disabled = !!tab.readOnly || !tab.scriptId;
-        readOnlyHint.classList.toggle('hidden', !tab.readOnly);
-        this.state.unsavedChanges = !!tab.dirty && !tab.readOnly;
-        this.state.editor.setOption('readOnly', tab.readOnly ? 'nocursor' : false);
-        this.state.editor.refresh();
-        setTimeout(() => this.state.editor.focus(), 50);
-      },
-
-      updateEditorMeta() {
-        const tab = this.getActiveTab();
-        const nameInput = document.getElementById('script-name-input');
-        const readOnlyHint = document.getElementById('readonly-hint');
-        if (!tab) { nameInput.value = ''; nameInput.disabled = true; readOnlyHint.classList.add('hidden'); return; }
-        if (tab.scriptId) {
-          const script = this.getScript(tab.scriptId);
-          nameInput.value = script ? script.name : tab.title;
-          nameInput.disabled = tab.readOnly;
-        } else {
-          nameInput.value = tab.title;
-          nameInput.disabled = true;
-        }
-        readOnlyHint.classList.toggle('hidden', !tab.readOnly);
-      },
-
-      renderTabs() {
-        const strip = document.getElementById('tab-strip');
-        strip.innerHTML = '';
-        if (this.state.openTabs.length === 0) return;
-        this.state.openTabs.forEach(tab => {
-          const el = document.createElement('button');
-          el.className = `tab ${tab.id === this.state.activeTabId ? 'active' : ''}`;
-          el.title = tab.remote ? `${tab.title} (preview)` : tab.title;
-          el.innerHTML = `
-            <span class="tree-version-left" style="gap:0.45rem; min-width:0; flex:1;">
-              ${icon(tab.remote ? 'eye' : 'file')}
-              <span class="tab-title">${tab.title}</span>
-              ${tab.dirty ? '<span class="tab-dirty" aria-label="Unsaved changes"></span>' : ''}
-            </span>
-            <span class="tab-close" role="button" aria-label="Close tab">${icon('close')}</span>
-          `;
-          el.addEventListener('click', (e) => {
-            if (e.target.closest('.tab-close')) { e.stopPropagation(); this.closeTab(tab.id); return; }
-            this.setActiveTab(tab.id);
-          });
-          strip.appendChild(el);
-        });
-      },
-
-      closeTab(tabId) {
-        const tab = this.state.openTabs.find(t => t.id === tabId);
-        if (!tab) return;
-        if (tab.dirty && !tab.readOnly) {
-          if (!confirm('This tab has unsaved changes. Close it anyway?')) return;
-        }
-        const idx = this.state.openTabs.findIndex(t => t.id === tabId);
-        this.state.openTabs.splice(idx, 1);
-        if (this.state.activeTabId === tabId) {
-          const next = this.state.openTabs[Math.max(0, idx - 1)] || this.state.openTabs[0] || null;
-          if (next) this.setActiveTab(next.id, { force: true });
-          else {
-            this.state.activeTabId = null;
-            this.state.currentScriptId = null;
-            this.state.editor.setValue('');
-            this.updateEditorMeta();
-            this.updateUI();
-            this.renderTabs();
-            this.renderExplorer();
-          }
-        } else {
-          this.renderTabs();
-          this.renderExplorer();
-        }
-      },
-
-      updateTabLabelsForScript(scriptId) {
-        const script = this.getScript(scriptId);
-        if (!script) return;
-        this.state.openTabs.filter(t => t.scriptId === scriptId).forEach(tab => {
-          const version = tab.versionId ? this.getVersion(scriptId, tab.versionId) : null;
-          tab.title = makeTabTitle(script.name, version ? version.versionNumber : null);
-        });
-        this.renderTabs();
-        this.updateEditorMeta();
-      },
-
-      async loadScriptVersion(scriptId, versionId = null) {
-        const script = this.getScript(scriptId);
-        if (!script) return;
-        const version = versionId ? this.getVersion(scriptId, versionId) : this.getLatestVersion(scriptId);
-        if (this.state.unsavedChanges) {
-          if (!confirm('You have unsaved changes in the active tab. Open the selected file anyway?')) return;
-        }
-        const content = version ? version.sourceCode : '';
-        const tabId = this.openTabForScript(scriptId, { versionId: version ? version.id : null, content });
-        if (tabId) await this.setActiveTab(tabId, { force: true });
-      },
-
-      async saveVersion(options = {}) {
-        const tab = this.getActiveTab();
-        if (!tab || tab.readOnly || !tab.scriptId) { showNotification('Open a local script before saving', 'warning'); return null; }
-        const script = this.getScript(tab.scriptId);
-        if (!script) return null;
-        const code = this.state.editor.getValue();
-        const hash = await sha256(code);
-        const currentVersion = tab.versionId ? await dbGet('versions', tab.versionId) : null;
-        if (currentVersion && currentVersion.sourceHash === hash && !options.force) {
-          if (!options.silent) showNotification('No changes detected', 'warning');
-          return currentVersion;
-        }
-
-        const versions = this.getVersionsForScript(script.id);
-        const nextNum = versions.length ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1;
-        const version = {
-          id: generateUUID(), scriptId: script.id, parentVersionId: currentVersion ? currentVersion.id : null, branchId: currentVersion ? currentVersion.branchId : 'main',
-          versionNumber: nextNum, displayName: `${script.name} (${versionLabel(nextNum)})`, commitMessage: options.commitMessage || '', sourceCode: code,
-          createdAt: new Date().toISOString(), characterCount: code.length, lineCount: code.split('\n').length, sourceHash: hash,
-          uploadedToCalculator: false, uploadedAt: null, published: false, publishedAt: null, publishedPath: null
+        const script = {
+          id: generateUUID(), name: name, activeVersionId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          published: false, publishedAt: null
         };
+        return dbPut('scripts', script).then(function() {
+          self.state.scripts.push(script);
+          self.renderExplorer();
+          self.openTab(script.id);
+          notify('Script created', 'success');
+        });
+      });
+    });
 
-        await dbPut('versions', version);
-        this.state.versions.push(version);
+    document.getElementById('btn-import-py').addEventListener('click', function() {
+      document.getElementById('file-import').click();
+    });
 
-        script.activeVersionId = version.id;
+    document.getElementById('file-import').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function() {
+        let name = ensurePy(file.name);
+        if (self.state.scripts.some(function(s) { return s.name.toLowerCase() === name.toLowerCase(); })) {
+          name = ensurePy(file.name.replace(/\.py$/i, '') + '_' + amsFilename());
+        }
+        const script = {
+          id: generateUUID(), name: name, activeVersionId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          published: false, publishedAt: null
+        };
+        dbPut('scripts', script).then(function() {
+          self.state.scripts.push(script);
+          self.renderExplorer();
+          const tabId = self.openTab(script.id, { content: reader.result });
+          self.setActiveTab(tabId, { force: true });
+          notify('Imported Python file', 'success');
+        });
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('script-name-input').addEventListener('change', function(e) {
+      if (!self.state.currentScriptId) return;
+      const newName = ensurePy(e.target.value.trim());
+      const script = self.state.scripts.find(function(s) { return s.id === self.state.currentScriptId; });
+      if (!script) return;
+      if (script.name.toLowerCase() === newName.toLowerCase()) {
+        e.target.value = script.name;
+        return;
+      }
+      if (self.state.scripts.some(function(s) { return s.id !== script.id && s.name.toLowerCase() === newName.toLowerCase(); })) {
+        notify('Another file already uses that name', 'error');
+        e.target.value = script.name;
+        return;
+      }
+      script.name = newName;
+      script.updatedAt = new Date().toISOString();
+      dbPut('scripts', script).then(function() {
+        self.updateTabLabels(script.id);
+        self.renderExplorer();
+        e.target.value = script.name;
+        notify('Filename updated', 'success');
+      });
+    });
+
+    document.getElementById('btn-save-version').addEventListener('click', function() { self.saveVersion(); });
+    document.getElementById('btn-publish').addEventListener('click', function() { self.publish(); });
+    document.getElementById('btn-upload').addEventListener('click', function() { self.loadToCalc(); });
+    document.getElementById('btn-export').addEventListener('click', function() { self.exportAll(); });
+    document.getElementById('btn-market-search').addEventListener('click', function() { self.refreshMarket(); });
+    document.getElementById('btn-market-refresh').addEventListener('click', function() { self.refreshMarket(true); });
+
+    document.getElementById('market-search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') self.refreshMarket();
+    });
+    document.getElementById('market-search-input').addEventListener('input', function(e) {
+      self.state.marketQuery = e.target.value;
+      self.renderMarket();
+    });
+
+    document.getElementById('btn-settings').addEventListener('click', function() {
+      const isAutosave = localStorage.getItem('dub5_autosave') === 'true';
+      self.showModal('Settings', [
+        { id: 'autosave', label: 'Enable Autosave (saves version after 2s of inactivity)', type: 'checkbox', checked: isAutosave }
+      ], function(data) {
+        localStorage.setItem('dub5_autosave', data['autosave'] === 'on' ? 'true' : 'false');
+        notify('Settings saved', 'success');
+      });
+    });
+
+    document.addEventListener('contextmenu', function(e) {
+      const scriptRow = e.target.closest('.tree-script-row');
+      const versionRow = e.target.closest('.tree-version-row');
+      if (scriptRow) {
+        e.preventDefault();
+        const sid = scriptRow.closest('.tree-node').dataset.scriptId;
+        self.showCtx(e.clientX, e.clientY, 'script', sid);
+      } else if (versionRow) {
+        e.preventDefault();
+        const sid = versionRow.closest('.tree-node').dataset.scriptId;
+        self.showCtx(e.clientX, e.clientY, 'version', versionRow.dataset.versionId, sid);
+      } else {
+        self.hideCtx();
+      }
+    });
+
+    document.addEventListener('click', function() { self.hideCtx(); });
+
+    document.getElementById('context-menu').addEventListener('click', function(e) {
+      const item = e.target.closest('.context-menu-item');
+      if (!item || !self.state.contextMenuTarget) return;
+      const action = item.dataset.action;
+      const sid = self.state.contextMenuTarget.scriptId;
+      self.hideCtx();
+
+      if (action === 'rename') {
+        const script = self.getScript(sid);
+        if (!script) return;
+        const nn = prompt('Enter new filename (with .py):', script.name);
+        if (!nn) return;
+        const ensured = ensurePy(nn);
+        if (self.state.scripts.some(function(s) { return s.id !== sid && s.name.toLowerCase() === ensured.toLowerCase(); })) {
+          notify('A script with this name already exists', 'error');
+          return;
+        }
+        script.name = ensured;
         script.updatedAt = new Date().toISOString();
-        await dbPut('scripts', script);
+        dbPut('scripts', script).then(function() {
+          self.updateTabLabels(sid);
+          self.renderExplorer();
+          notify('Script renamed', 'success');
+        });
+      } else if (action === 'duplicate') {
+        const script = self.getScript(sid);
+        if (!script) return;
+        const base = script.name.replace(/\.py$/i, '');
+        let i = 1, nn = base + ' (' + i + ').py';
+        while (self.state.scripts.some(function(s) { return s.name.toLowerCase() === nn.toLowerCase(); })) {
+          i++; nn = base + ' (' + i + ').py';
+        }
+        const newScript = {
+          id: generateUUID(), name: nn, activeVersionId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          published: false, publishedAt: null
+        };
+        dbPut('scripts', newScript).then(function() {
+          self.state.scripts.push(newScript);
+          const latest = self.getLatest(sid);
+          if (!latest) {
+            self.renderExplorer();
+            self.openTab(newScript.id);
+            notify('Duplicated as ' + nn, 'success');
+            return;
+          }
+          return sha256(latest.sourceCode).then(function(hash) {
+            const v = {
+              id: generateUUID(), scriptId: newScript.id, parentVersionId: null,
+              branchId: 'main', versionNumber: 1,
+              displayName: nn + ' (v1.0)', commitMessage: 'Duplicated',
+              sourceCode: latest.sourceCode,
+              createdAt: new Date().toISOString(),
+              characterCount: latest.sourceCode.length,
+              lineCount: latest.sourceCode.split('\n').length,
+              sourceHash: hash, uploadedToCalculator: false, uploadedAt: null,
+              published: false, publishedAt: null, publishedPath: null
+            };
+            return dbPut('versions', v).then(function() {
+              self.state.versions.push(v);
+              newScript.activeVersionId = v.id;
+              return dbPut('scripts', newScript);
+            }).then(function() {
+              self.renderExplorer();
+              self.openTab(newScript.id);
+              notify('Duplicated as ' + nn, 'success');
+            });
+          });
+        });
+      } else if (action === 'delete') {
+        const script = self.getScript(sid);
+        if (!script) return;
+        if (!confirm('Delete "' + script.name + '" and all its versions?')) return;
+        const versions = self.getVersions(sid);
+        const dels = versions.map(function(v) {
+          return dbDel('versions', v.id).then(function() {
+            const rps = self.state.restorePoints.filter(function(rp) { return rp.versionId === v.id; });
+            return Promise.all(rps.map(function(rp) { return dbDel('restorePoints', rp.id); }));
+          });
+        });
+        Promise.all(dels).then(function() {
+          return dbDel('scripts', sid);
+        }).then(function() {
+          self.state.scripts = self.state.scripts.filter(function(s) { return s.id !== sid; });
+          self.state.versions = self.state.versions.filter(function(v) { return v.scriptId !== sid; });
+          self.state.restorePoints = self.state.restorePoints.filter(function(rp) { return rp.scriptId !== sid; });
+          const open = self.state.openTabs.find(function(t) { return t.scriptId === sid; });
+          if (open) self.closeTab(open.id);
+          self.renderExplorer();
+          notify('Script deleted', 'success');
+        });
+      }
+    });
 
-        const restorePoint = { id: generateUUID(), scriptId: script.id, versionId: version.id, name: `${script.name} ${formatAmsterdamDisplay(new Date())}`, description: 'Automatic restore point', createdAt: new Date().toISOString() };
-        await dbPut('restorePoints', restorePoint);
-        this.state.restorePoints.push(restorePoint);
+    window.addEventListener('beforeunload', function(e) {
+      if (self.state.unsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  },
 
-        tab.versionId = version.id;
-        tab.content = code;
-        tab.dirty = false;
-        tab.title = makeTabTitle(script.name, version.versionNumber);
-        this.state.unsavedChanges = false;
+  showCtx: function(x, y, type, id, sid) {
+    this.state.contextMenuTarget = { type: type, id: id, scriptId: sid };
+    const m = document.getElementById('context-menu');
+    m.style.left = x + 'px';
+    m.style.top = y + 'px';
+    m.classList.remove('hidden');
+  },
 
-        this.renderExplorer();
-        this.renderTabs();
+  hideCtx: function() {
+    this.state.contextMenuTarget = null;
+    document.getElementById('context-menu').classList.add('hidden');
+  },
+
+  getActiveTab: function() {
+    const id = this.state.activeTabId;
+    return this.state.openTabs.find(function(t) { return t.id === id; }) || null;
+  },
+
+  getScript: function(sid) {
+    return this.state.scripts.find(function(s) { return s.id === sid; }) || null;
+  },
+
+  getVersions: function(sid) {
+    return this.state.versions.filter(function(v) { return v.scriptId === sid; })
+      .sort(function(a, b) { return a.versionNumber - b.versionNumber; });
+  },
+
+  getVersion: function(sid, vid) {
+    return this.state.versions.find(function(v) { return v.id === vid && v.scriptId === sid; }) || null;
+  },
+
+  getLatest: function(sid) {
+    const vs = this.getVersions(sid);
+    return vs.length ? vs[vs.length - 1] : null;
+  },
+
+  openTab: function(sid, opts) {
+    opts = opts || {};
+    const script = this.getScript(sid);
+    if (!script) return null;
+    const version = opts.versionId
+      ? this.getVersion(sid, opts.versionId)
+      : this.getVersion(sid, script.activeVersionId) || this.getLatest(sid);
+    const key = sid + ':' + (version ? version.id : 'draft') + ':' + (opts.remote ? 'r' : 'l');
+    const existing = this.state.openTabs.find(function(t) { return t.key === key; });
+    if (existing) { this.setActiveTab(existing.id); return existing.id; }
+    const tab = {
+      id: generateUUID(), key: key, scriptId: sid,
+      versionId: version ? version.id : null,
+      title: tabTitle(script.name, version ? version.versionNumber : null),
+      content: typeof opts.content === 'string' ? opts.content : (version ? version.sourceCode : ''),
+      dirty: false, remote: !!opts.remote, readOnly: !!opts.remote
+    };
+    this.state.openTabs.push(tab);
+    this.setActiveTab(tab.id, { force: true });
+    return tab.id;
+  },
+
+  openRemote: function(name, content) {
+    const key = 'mkt:' + name;
+    const existing = this.state.openTabs.find(function(t) { return t.key === key; });
+    if (existing) { this.setActiveTab(existing.id); return existing.id; }
+    const tab = {
+      id: generateUUID(), key: key, scriptId: null, versionId: null,
+      title: name, content: content || '', dirty: false,
+      remote: true, readOnly: true
+    };
+    this.state.openTabs.push(tab);
+    this.setActiveTab(tab.id, { force: true });
+    return tab.id;
+  },
+
+  setActiveTab: function(tabId, opts) {
+    opts = opts || {};
+    const self = this;
+    const tab = this.state.openTabs.find(function(t) { return t.id === tabId; });
+    if (!tab) return;
+    const current = this.getActiveTab();
+    if (current && current.id !== tab.id && !opts.force && !current.readOnly) {
+      current.content = this.state.editor.getValue();
+      current.dirty = current.content !== this.getSavedContent(current);
+    }
+    this.state.activeTabId = tabId;
+    this.state.currentScriptId = tab.scriptId;
+    this.refreshEditor();
+    this.renderTabs();
+    this.renderExplorer();
+    this.updateEditorMeta();
+    this.updateUI();
+  },
+
+  getSavedContent: function(tab) {
+    if (!tab) return '';
+    if (tab.remote) return tab.content || '';
+    const script = this.getScript(tab.scriptId);
+    if (!script) return tab.content || '';
+    const v = tab.versionId ? this.getVersion(tab.scriptId, tab.versionId) : null;
+    return v ? v.sourceCode : (tab.content || '');
+  },
+
+  refreshEditor: function() {
+    const self = this;
+    const tab = this.getActiveTab();
+    const nameInput = document.getElementById('script-name-input');
+    const roHint = document.getElementById('readonly-hint');
+    if (!tab) {
+      this.state.editor.setValue('');
+      nameInput.value = '';
+      nameInput.disabled = true;
+      roHint.classList.add('hidden');
+      this.state.unsavedChanges = false;
+      this.updateUI();
+      return;
+    }
+    const content = tab.remote ? tab.content : (tab.content || '');
+    this.state.suppressEditorChange = true;
+    this.state.editor.setValue(content);
+    this.state.suppressEditorChange = false;
+    nameInput.value = tab.scriptId ? ((this.getScript(tab.scriptId) || {}).name || '') : tab.title;
+    nameInput.disabled = !!tab.readOnly || !tab.scriptId;
+    roHint.classList.toggle('hidden', !tab.readOnly);
+    this.state.unsavedChanges = !!tab.dirty && !tab.readOnly;
+    this.state.editor.setOption('readOnly', tab.readOnly ? 'nocursor' : false);
+    this.state.editor.refresh();
+    setTimeout(function() { self.state.editor.focus(); }, 50);
+  },
+
+  updateEditorMeta: function() {
+    const tab = this.getActiveTab();
+    const nameInput = document.getElementById('script-name-input');
+    const roHint = document.getElementById('readonly-hint');
+    if (!tab) {
+      nameInput.value = '';
+      nameInput.disabled = true;
+      roHint.classList.add('hidden');
+      return;
+    }
+    if (tab.scriptId) {
+      const s = this.getScript(tab.scriptId);
+      nameInput.value = s ? s.name : tab.title;
+      nameInput.disabled = tab.readOnly;
+    } else {
+      nameInput.value = tab.title;
+      nameInput.disabled = true;
+    }
+    roHint.classList.toggle('hidden', !tab.readOnly);
+  },
+
+  renderTabs: function() {
+    const self = this;
+    const strip = document.getElementById('tab-strip');
+    strip.innerHTML = '';
+    if (!this.state.openTabs.length) return;
+    this.state.openTabs.forEach(function(tab) {
+      const el = document.createElement('button');
+      el.className = 'tab' + (tab.id === self.state.activeTabId ? ' active' : '');
+      el.title = tab.title;
+      el.innerHTML =
+        '<span class="tree-version-left" style="gap:0.45rem; min-width:0; flex:1;">' +
+          icon(tab.remote ? 'eye' : 'file') +
+          '<span class="tab-title">' + tab.title + '</span>' +
+          (tab.dirty ? '<span class="tab-dirty"></span>' : '') +
+        '</span>' +
+        '<span class="tab-close">' + icon('close') + '</span>';
+      el.addEventListener('click', function(e) {
+        if (e.target.closest('.tab-close')) {
+          e.stopPropagation();
+          self.closeTab(tab.id);
+          return;
+        }
+        self.setActiveTab(tab.id);
+      });
+      strip.appendChild(el);
+    });
+  },
+
+  closeTab: function(tabId) {
+    const self = this;
+    const tab = this.state.openTabs.find(function(t) { return t.id === tabId; });
+    if (!tab) return;
+    if (tab.dirty && !tab.readOnly) {
+      if (!confirm('This tab has unsaved changes. Close anyway?')) return;
+    }
+    const i = this.state.openTabs.findIndex(function(t) { return t.id === tabId; });
+    this.state.openTabs.splice(i, 1);
+    if (this.state.activeTabId === tabId) {
+      const next = this.state.openTabs[Math.max(0, i - 1)] || this.state.openTabs[0] || null;
+      if (next) {
+        this.setActiveTab(next.id, { force: true });
+      } else {
+        this.state.activeTabId = null;
+        this.state.currentScriptId = null;
+        this.state.editor.setValue('');
         this.updateEditorMeta();
         this.updateUI();
-        if (!options.silent) showNotification('Version saved and restore point created automatically', 'success');
-        return version;
-      },
-
-      async loadActiveTabToCalculator() {
-        const tab = this.getActiveTab();
-        if (!tab || tab.readOnly) { showNotification('Open a local script first', 'warning'); return; }
-        if (!this.state.calc.isConnected) { showNotification('Please connect the calculator first', 'warning'); return; }
-        const script = this.getScript(tab.scriptId);
-        if (!script) return;
-        const code = this.state.editor.getValue();
-        if (tab.dirty) await this.saveVersion({ silent: true, force: true });
-        
-        let existsOnCalc = false;
-        try {
-          const calcScripts = await this.state.calc.getScripts();
-          existsOnCalc = calcScripts.some(s => s.name.toLowerCase() === script.name.toLowerCase());
-        } catch(e) {}
-
-        const msg = existsOnCalc 
-          ? `Load "${script.name}" to the calculator? This will overwrite the existing file on the device.`
-          : `Load "${script.name}" to the calculator as a new file?`;
-          
-        if (!confirm(msg)) return;
-        
-        try {
-          showNotification('Uploading to calculator...', 'info');
-          await this.state.calc.uploadScript(script.name, code);
-          const version = tab.versionId ? await dbGet('versions', tab.versionId) : null;
-          if (version) {
-            version.uploadedToCalculator = true;
-            version.uploadedAt = new Date().toISOString();
-            await dbPut('versions', version);
-          }
-          showNotification('Uploaded and verified successfully', 'success');
-          this.renderExplorer();
-        } catch (e) {
-          showNotification('Upload failed: ' + e.message, 'error');
-        }
-      },
-
-      async syncFromCalculator() {
-        try {
-          const calcScripts = await this.state.calc.getScripts();
-          for (const cs of calcScripts) {
-            const hash = await sha256(cs.code);
-            const existing = this.state.scripts.find(s => s.name === ensurePyExtension(cs.name));
-            if (!existing) {
-              const script = { id: generateUUID(), name: ensurePyExtension(cs.name), activeVersionId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), published: false, publishedAt: null };
-              await dbPut('scripts', script);
-              this.state.scripts.push(script);
-              const version = {
-                id: generateUUID(), scriptId: script.id, parentVersionId: null, branchId: 'main', versionNumber: 1,
-                displayName: `${script.name} (${versionLabel(1)})`, commitMessage: 'Imported from calculator', sourceCode: cs.code,
-                createdAt: new Date().toISOString(), characterCount: cs.code.length, lineCount: cs.code.split('\n').length, sourceHash: hash,
-                uploadedToCalculator: true, uploadedAt: new Date().toISOString(), published: false, publishedAt: null, publishedPath: null
-              };
-              await dbPut('versions', version);
-              this.state.versions.push(version);
-              script.activeVersionId = version.id;
-              await dbPut('scripts', script);
-            } else {
-              const activeVersion = existing.activeVersionId ? await dbGet('versions', existing.activeVersionId) : null;
-              if (!activeVersion || activeVersion.sourceHash !== hash) {
-                const versions = this.getVersionsForScript(existing.id);
-                const nextNum = versions.length ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1;
-                const version = {
-                  id: generateUUID(), scriptId: existing.id, parentVersionId: existing.activeVersionId, branchId: activeVersion ? activeVersion.branchId : 'main',
-                  versionNumber: nextNum, displayName: `${existing.name} (${versionLabel(nextNum)})`, commitMessage: 'Auto-synced from device', sourceCode: cs.code,
-                  createdAt: new Date().toISOString(), characterCount: cs.code.length, lineCount: cs.code.split('\n').length, sourceHash: hash,
-                  uploadedToCalculator: true, uploadedAt: new Date().toISOString(), published: false, publishedAt: null, publishedPath: null
-                };
-                await dbPut('versions', version);
-                this.state.versions.push(version);
-                existing.activeVersionId = version.id;
-                existing.updatedAt = new Date().toISOString();
-                await dbPut('scripts', existing);
-              }
-            }
-          }
-          this.state.scripts = await dbGetAll('scripts');
-          this.state.versions = await dbGetAll('versions');
-          this.renderExplorer();
-          showNotification('Calculator scripts synchronized', 'success');
-        } catch (e) {
-          showNotification('Sync failed: ' + e.message, 'error');
-        }
-      },
-
-      updateCalcStatus(connected, info) {
-        const dot = document.getElementById('status-dot');
-        const text = document.getElementById('status-text');
-        const btn = document.getElementById('btn-connect');
-        if (connected) {
-          dot.classList.add('connected');
-          const label = info?.model || info?.name || info?.device || this.state.calc.getDeviceLabel();
-          text.textContent = `Connected — ${label}`;
-          btn.title = `Reconnect calculator (${label})`;
-        } else {
-          dot.classList.remove('connected');
-          text.textContent = 'Not connected';
-          btn.title = 'Connect calculator';
-        }
-      },
-
-      renderExplorer() {
-        const tree = document.getElementById('script-tree');
-        tree.innerHTML = '';
-        if (!this.state.scripts.length) { tree.innerHTML = '<div class="empty-state">No scripts yet</div>'; return; }
-        const scripts = [...this.state.scripts].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-        for (const script of scripts) {
-          const versions = this.getVersionsForScript(script.id);
-          const currentVersion = script.activeVersionId ? this.getVersion(script.id, script.activeVersionId) : this.getLatestVersion(script.id);
-          const node = document.createElement('div');
-          node.className = `tree-node ${this.state.currentScriptId === script.id ? 'active' : ''}`;
-          node.dataset.scriptId = script.id;
-          node.innerHTML = `
-            <button class="tree-script-row" data-action="open-script">
-              <span class="tree-script-left">
-                <span class="caret">${icon('chevron')}</span>
-                ${icon('folder')}
-                <span class="tree-script-name">${script.name}</span>
-              </span>
-              <span class="tree-script-meta">${currentVersion ? versionLabel(currentVersion.versionNumber) : 'draft'}</span>
-            </button>
-            <div class="tree-versions">
-              ${versions.length ? '' : '<div class="empty-state" style="padding:0.9rem 1rem; text-align:left;">No versions yet</div>'}
-            </div>
-          `;
-          
-          const row = node.querySelector('.tree-script-row');
-          const nameEl = node.querySelector('.tree-script-name');
-          
-          row.addEventListener('click', (e) => {
-            if (!e.target.closest('.tree-script-name')) node.classList.toggle('expanded');
-          });
-          
-          nameEl.style.cursor = 'pointer';
-          nameEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.loadScriptVersion(script.id, script.activeVersionId || null);
-          });
-
-          const versionsWrap = node.querySelector('.tree-versions');
-          versions.forEach(v => {
-            const versionEl = document.createElement('button');
-            versionEl.dataset.versionId = v.id;
-            const activeTab = this.getActiveTab();
-            versionEl.className = `tree-version-row ${v.id === (activeTab ? activeTab.versionId : null) ? 'current' : ''} ${v.published ? 'published' : ''}`;
-            const rp = this.state.restorePoints.find(r => r.versionId === v.id);
-            versionEl.innerHTML = `
-              <span class="tree-version-left">
-                ${icon('file')}
-                <span class="tree-version-name">${script.name} (${versionLabel(v.versionNumber)})</span>
-              </span>
-              <span class="tree-version-meta">${rp ? '★' : ''} ${formatAmsterdamDisplay(new Date(v.createdAt))}</span>
-            `;
-            versionEl.addEventListener('click', () => {
-              node.classList.add('expanded');
-              this.loadScriptVersion(script.id, v.id);
-            });
-            versionsWrap.appendChild(versionEl);
-          });
-          if (this.state.currentScriptId === script.id) node.classList.add('expanded');
-          tree.appendChild(node);
-        }
-      },
-
-      async refreshMarketplace(force = false) {
-        const query = (document.getElementById('market-search-input').value || '').trim();
-        this.state.marketQuery = query;
-        if (force || !this.state.marketplaceInitialized) {
-          this.state.marketLoading = true;
-          showStatusPill('Loading marketplace…', 'warning');
-          try {
-            const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${GITHUB_BRANCH}?recursive=1`;
-            const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-            if (res.status >= 400) throw new Error(`GitHub tree request failed (${res.status} ${res.statusText})`);
-            
-            let data = await res.json();
-            let allFiles = data.tree || [];
-            let pyFiles = allFiles.filter(item => item.type === 'blob' && item.path && typeof item.path === 'string' && item.path.endsWith('.py'));
-            
-            let activeBranch = GITHUB_BRANCH;
-
-            // Fallback to master branch if main yields 0 .py files
-            if (pyFiles.length === 0 && GITHUB_BRANCH.toLowerCase() === 'main') {
-              const urlMaster = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/master?recursive=1`;
-              const resMaster = await fetch(urlMaster, { headers: { 'Accept': 'application/vnd.github+json' } });
-              if (resMaster.status >= 200 && resMaster.status < 400) {
-                const dataMaster = await resMaster.json();
-                allFiles = dataMaster.tree || [];
-                pyFiles = allFiles.filter(item => item.type === 'blob' && item.path && typeof item.path === 'string' && item.path.endsWith('.py'));
-                if (pyFiles.length > 0) activeBranch = 'master';
-              }
-            }
-            
-            for (const item of pyFiles) {
-              // Safely derive name from path to avoid undefined errors
-              const fileName = item.path.split('/').pop();
-              const base = fileName.replace(/\.py$/i, '');
-              const lastSlash = item.path.lastIndexOf('/');
-              const dir = lastSlash >= 0 ? item.path.substring(0, lastSlash + 1) : '';
-              
-              const pngPath = `${dir}${base}.png`;
-              const jpgPath = `${dir}${base}.jpg`;
-              const hasPng = allFiles.some(f => f.path === pngPath);
-              const hasJpg = !hasPng && allFiles.some(f => f.path === jpgPath);
-              if (hasPng) item.iconUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${activeBranch}/${pngPath}`;
-              else if (hasJpg) item.iconUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${activeBranch}/${jpgPath}`;
-              
-              // Ensure name is explicitly set for rendering
-              item.name = fileName;
-            }
-
-            const filesToFetch = pyFiles.slice(0, 30);
-            await Promise.allSettled(filesToFetch.map(async (item) => {
-              try {
-                const resFile = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${activeBranch}/${item.path}`);
-                if (resFile.ok) {
-                  const text = await resFile.text();
-                  const firstLine = text.split('\n')[0].trim();
-                  item.description = firstLine.startsWith('#') ? firstLine.substring(1).trim() : '';
-                } else {
-                  item.description = '';
-                }
-              } catch (e) { item.description = ''; }
-            }));
-
-            this.state.marketCache = pyFiles;
-            this.state.marketplaceInitialized = true;
-            showStatusPill(`${pyFiles.length} scripts available`, 'success');
-          } catch (e) {
-            console.error('Marketplace fetch error:', e);
-            this.state.marketCache = [];
-            showStatusPill('Marketplace error: ' + e.message, 'error');
-          } finally {
-            this.state.marketLoading = false;
-          }
-        }
-        this.renderMarketplace();
-      },
-
-      renderMarketplace() {
-        const results = document.getElementById('market-results');
-        const q = (this.state.marketQuery || '').toLowerCase();
-        const items = this.state.marketCache.filter(item => !q || (item.name && item.name.toLowerCase().includes(q)) || (item.path && item.path.toLowerCase().includes(q)));
-        results.innerHTML = '';
-        if (!this.state.marketCache.length) { results.innerHTML = '<div class="empty-state">No marketplace scripts found yet.</div>'; return; }
-        if (!items.length) { results.innerHTML = '<div class="empty-state">No results matched your search.</div>'; return; }
-        items.slice(0, 50).forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'market-card';
-          const iconHtml = item.iconUrl ? `<img src="${item.iconUrl}" style="width:20px;height:20px;border-radius:4px;object-fit:cover;margin-right:8px;" alt="icon">` : '';
-          const descHtml = item.description ? `<div class="market-subtitle">${item.description}</div>` : '';
-          card.innerHTML = `
-            <div class="market-row">
-              <div style="min-width:0; display:flex; align-items:center;">
-                ${iconHtml}
-                <div style="min-width:0;">
-                  <div class="market-title">${item.name || 'Unknown'}</div>
-                  ${descHtml}
-                </div>
-              </div>
-              <button class="market-action" title="Load script" aria-label="Load script">${icon('eye')}</button>
-            </div>
-          `;
-          card.querySelector('.market-action').addEventListener('click', () => this.loadMarketplaceScript(item));
-          results.appendChild(card);
-        });
-      },
-
-      async loadMarketplaceScript(item) {
-        try {
-          showNotification('Loading marketplace script…', 'info');
-          const activeBranch = this.state.marketCache.includes(item) ? (item.iconUrl ? item.iconUrl.split('/')[5] : GITHUB_BRANCH) : GITHUB_BRANCH;
-          const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${activeBranch}/${item.path}`;
-          const res = await fetch(rawUrl);
-          if (!res.ok) throw new Error(`Unable to load script (${res.status})`);
-          const content = await res.text();
-          const tabId = this.openRemoteTab(item.name || 'Unknown', content);
-          await this.setActiveTab(tabId, { force: true });
-          showNotification('Marketplace script opened', 'success');
-        } catch (e) {
-          showNotification('Marketplace load failed: ' + e.message, 'error');
-        }
-      },
-
-      async publishActiveScript() {
-        const tab = this.getActiveTab();
-        if (!tab || tab.readOnly || !tab.scriptId) { showNotification('Open a local script before publishing', 'warning'); return; }
-        const script = this.getScript(tab.scriptId);
-        if (!script) return;
-        if (tab.dirty) await this.saveVersion({ silent: true, force: true });
-        const activeVersion = script.activeVersionId ? await dbGet('versions', script.activeVersionId) : null;
-        if (!activeVersion) { showNotification('Save a version first, then publish', 'warning'); return; }
-
-        const endpoint = "https://db-5-nmwrks-tkn-pldr.vercel.app/api/upload";
-        const content = this.state.editor.getValue();
-        const rawName = (script.name || "").trim();
-        const timestampName = (() => {
-          const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
-          const pick = (type) => parts.find((p) => p.type === type)?.value || "";
-          return `${Number(pick("day"))}-${Number(pick("month"))}-${pick("year")}-${pick("hour")}:${pick("minute")}`;
-        })();
-        const filename = rawName ? rawName.replace(/\.py$/i, "") + ".py" : `${timestampName}.py`;
-
-        try {
-          showNotification('Publishing script...', 'info');
-          const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename, content, commitMessage: `Publish ${filename}` }) });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.error || "Publish failed");
-          
-          activeVersion.published = true;
-          activeVersion.publishedAt = new Date().toISOString();
-          activeVersion.publishedPath = filename;
-          await dbPut('versions', activeVersion);
-          script.published = true;
-          script.publishedAt = activeVersion.publishedAt;
-          await dbPut('scripts', script);
-          
-          this.state.versions = await dbGetAll('versions');
-          this.state.scripts = await dbGetAll('scripts');
-          this.renderExplorer();
-          showNotification(`Published successfully: ${filename}`, 'success');
-          
-          const btn = document.getElementById('btn-publish');
-          btn.innerHTML = icon('check');
-          setTimeout(() => setIconButton(btn, 'cloud'), 1400);
-        } catch (e) {
-          showNotification('Publish failed: ' + e.message, 'error');
-          const btn = document.getElementById('btn-publish');
-          btn.innerHTML = icon('warning');
-          setTimeout(() => setIconButton(btn, 'cloud'), 1400);
-        }
-      },
-
-      async exportAll() {
-        showNotification('Generating backup ZIP...', 'info');
-        const zip = new JSZip();
-        const scripts = await dbGetAll('scripts');
-        const versions = await dbGetAll('versions');
-        const restorePoints = await dbGetAll('restorePoints');
-        const manifest = {
-          application: 'DUB5 Python Version Manager', exportedAt: new Date().toISOString(),
-          scripts: scripts.map(s => ({ id: s.id, name: s.name })),
-          versions: versions.map(v => ({ id: v.id, scriptId: v.scriptId, versionNumber: v.versionNumber, displayName: v.displayName })),
-          restorePoints: restorePoints.map(rp => ({ id: rp.id, scriptId: rp.scriptId, versionId: rp.versionId, name: rp.name }))
-        };
-        zip.file('README.txt', `DUB5 Python Version Manager Backup\n====================================\nExported: ${new Date().toISOString()}\n\nThis archive contains:\n- manifest.json: Metadata about scripts, versions, and restore points.\n- scripts/: The latest version of each script.\n- versions/: All historical versions of each script.\n- restore-points/: Metadata about restore points.\n`);
-        zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-        const scriptsFolder = zip.folder('scripts');
-        const versionsFolder = zip.folder('versions');
-        const rpFolder = zip.folder('restore-points');
-        for (const script of scripts) {
-          const scriptVersions = versions.filter(v => v.scriptId === script.id).sort((a, b) => b.versionNumber - a.versionNumber);
-          const latestVersion = scriptVersions[0];
-          if (latestVersion) scriptsFolder.file(script.name, latestVersion.sourceCode);
-          const vFolder = versionsFolder.folder(script.name.replace(/\.py$/i, ''));
-          for (const v of scriptVersions) {
-            const paddedNum = String(v.versionNumber).padStart(3, '0');
-            const safeName = (v.displayName || `Version ${v.versionNumber}`).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            vFolder.file(`${paddedNum}-${safeName}.py`, v.sourceCode);
-          }
-        }
-        rpFolder.file('restore-points.json', JSON.stringify(restorePoints, null, 2));
-        try {
-          const content = await zip.generateAsync({ type: 'blob' });
-          const url = URL.createObjectURL(content);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `dub5-backup-${new Date().toISOString().split('T')[0]}.zip`;
-          a.click();
-          URL.revokeObjectURL(url);
-          showNotification('Backup exported successfully', 'success');
-        } catch (e) {
-          showNotification('Export failed: ' + e.message, 'error');
-        }
-      },
-
-      updateUI() {
-        const indicator = document.getElementById('unsaved-indicator');
-        indicator.classList.toggle('hidden', !this.state.unsavedChanges);
-        const activeTab = this.getActiveTab();
-        const btnSave = document.getElementById('btn-save-version');
-        const btnPublish = document.getElementById('btn-publish');
-        const btnUpload = document.getElementById('btn-upload');
-        const scriptInput = document.getElementById('script-name-input');
-        const readOnlyHint = document.getElementById('readonly-hint');
-        if (!activeTab) {
-          btnSave.disabled = true; btnPublish.disabled = true; btnUpload.disabled = true; scriptInput.disabled = true; readOnlyHint.classList.add('hidden');
-        } else {
-          btnSave.disabled = !!activeTab.readOnly || !activeTab.scriptId;
-          btnPublish.disabled = !!activeTab.readOnly || !activeTab.scriptId;
-          btnUpload.disabled = !!activeTab.readOnly || !activeTab.scriptId;
-          scriptInput.disabled = !!activeTab.readOnly || !activeTab.scriptId;
-          readOnlyHint.classList.toggle('hidden', !activeTab.readOnly);
-        }
-      },
-
-      showModal(title, fields, onSubmit) {
-        const root = document.getElementById('modal-root');
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        const fieldsHtml = fields.map(f => {
-          if (f.type === 'checkbox') {
-            return `<label class="modal-checkbox-label"><input type="checkbox" id="modal-${f.id}" ${f.checked ? 'checked' : ''}> ${f.label}</label>`;
-          }
-          return `<label for="modal-${f.id}">${f.label}</label><input type="${f.type}" id="modal-${f.id}" class="modal-input" placeholder="${f.placeholder || ''}" value="${f.value || ''}">`;
-        }).join('');
-        overlay.innerHTML = `<div class="modal"><h3>${title}</h3>${fieldsHtml}<div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="primary btn-submit">Confirm</button></div></div>`;
-        root.appendChild(overlay);
-        overlay.querySelector('.btn-cancel').onclick = () => overlay.remove();
-        overlay.querySelector('.btn-submit').onclick = async () => {
-          const data = {};
-          fields.forEach(f => {
-            if (f.type === 'checkbox') data[f.id] = document.getElementById(`modal-${f.id}`).checked ? 'on' : 'off';
-            else data[f.id] = document.getElementById(`modal-${f.id}`).value;
-          });
-          try { await onSubmit(data); overlay.remove(); } catch (e) { showNotification(e.message || 'Action failed', 'error'); }
-        };
-        const first = overlay.querySelector('.modal-input');
-        if (first) first.focus();
+        this.renderTabs();
+        this.renderExplorer();
       }
+    } else {
+      this.renderTabs();
+      this.renderExplorer();
+    }
+  },
+
+  updateTabLabels: function(sid) {
+    const self = this;
+    const script = this.getScript(sid);
+    if (!script) return;
+    this.state.openTabs.filter(function(t) { return t.scriptId === sid; }).forEach(function(tab) {
+      const v = tab.versionId ? self.getVersion(sid, tab.versionId) : null;
+      tab.title = tabTitle(script.name, v ? v.versionNumber : null);
+    });
+    this.renderTabs();
+    this.updateEditorMeta();
+  },
+
+  loadVersion: function(sid, vid) {
+    const script = this.getScript(sid);
+    if (!script) return;
+    const version = vid ? this.getVersion(sid, vid) : this.getLatest(sid);
+    if (this.state.unsavedChanges) {
+      if (!confirm('You have unsaved changes. Open the selected file anyway?')) return;
+    }
+    const content = version ? version.sourceCode : '';
+    const tabId = this.openTab(sid, { versionId: version ? version.id : null, content: content });
+    if (tabId) this.setActiveTab(tabId, { force: true });
+  },
+
+  saveVersion: function(opts) {
+    opts = opts || {};
+    const self = this;
+    const tab = this.getActiveTab();
+    if (!tab || tab.readOnly || !tab.scriptId) {
+      notify('Open a local script before saving', 'warning');
+      return Promise.resolve(null);
+    }
+    const script = this.getScript(tab.scriptId);
+    if (!script) return Promise.resolve(null);
+    const code = this.state.editor.getValue();
+
+    return sha256(code).then(function(hash) {
+      return dbGet('versions', tab.versionId).then(function(cur) {
+        if (cur && cur.sourceHash === hash && !opts.force) {
+          if (!opts.silent) notify('No changes detected', 'warning');
+          return cur;
+        }
+        const vs = self.getVersions(script.id);
+        const nextNum = vs.length ? Math.max.apply(null, vs.map(function(v) { return v.versionNumber; })) + 1 : 1;
+        const version = {
+          id: generateUUID(), scriptId: script.id,
+          parentVersionId: cur ? cur.id : null,
+          branchId: cur ? cur.branchId : 'main',
+          versionNumber: nextNum,
+          displayName: script.name + ' (' + vLabel(nextNum) + ')',
+          commitMessage: opts.commitMessage || '',
+          sourceCode: code,
+          createdAt: new Date().toISOString(),
+          characterCount: code.length,
+          lineCount: code.split('\n').length,
+          sourceHash: hash,
+          uploadedToCalculator: false, uploadedAt: null,
+          published: false, publishedAt: null, publishedPath: null
+        };
+        return dbPut('versions', version).then(function() {
+          self.state.versions.push(version);
+          script.activeVersionId = version.id;
+          script.updatedAt = new Date().toISOString();
+          return dbPut('scripts', script);
+        }).then(function() {
+          const rp = {
+            id: generateUUID(), scriptId: script.id, versionId: version.id,
+            name: script.name + ' ' + amsDisplay(new Date()),
+            description: 'Automatic restore point',
+            createdAt: new Date().toISOString()
+          };
+          return dbPut('restorePoints', rp).then(function() {
+            self.state.restorePoints.push(rp);
+          });
+        }).then(function() {
+          tab.versionId = version.id;
+          tab.content = code;
+          tab.dirty = false;
+          tab.title = tabTitle(script.name, version.versionNumber);
+          self.state.unsavedChanges = false;
+          self.renderExplorer();
+          self.renderTabs();
+          self.updateEditorMeta();
+          self.updateUI();
+          if (!opts.silent) notify('Version saved', 'success');
+          return version;
+        });
+      });
+    });
+  },
+
+  loadToCalc: function() {
+    const self = this;
+    const tab = this.getActiveTab();
+    if (!tab || tab.readOnly) {
+      notify('Open a local script first', 'warning');
+      return;
+    }
+    if (!this.state.calc.isConnected) {
+      notify('Please connect the calculator first', 'warning');
+      return;
+    }
+    const script = this.getScript(tab.scriptId);
+    if (!script) return;
+    const code = this.state.editor.getValue();
+    const doUpload = function() {
+      return self.state.calc.getScripts().then(function(list) {
+        const exists = list.some(function(s) { return s.name.toLowerCase() === script.name.toLowerCase(); });
+        const msg = exists
+          ? 'Load "' + script.name + '" to the calculator? This will overwrite the existing file.'
+          : 'Load "' + script.name + '" to the calculator as a new file?';
+        if (!confirm(msg)) return;
+        notify('Uploading to calculator...', 'info');
+        return self.state.calc.uploadScript(script.name, code).then(function() {
+          return tab.versionId ? dbGet('versions', tab.versionId) : null;
+        }).then(function(v) {
+          if (v) {
+            v.uploadedToCalculator = true;
+            v.uploadedAt = new Date().toISOString();
+            return dbPut('versions', v);
+          }
+        }).then(function() {
+          notify('Uploaded and verified successfully', 'success');
+          self.renderExplorer();
+        }).catch(function(e) {
+          notify('Upload failed: ' + e.message, 'error');
+        });
+      }).catch(function(e) {
+        notify('Upload failed: ' + e.message, 'error');
+      });
+    };
+    if (tab.dirty) {
+      this.saveVersion({ silent: true, force: true }).then(doUpload);
+    } else {
+      doUpload();
+    }
+  },
+
+  syncFromCalc: function() {
+    const self = this;
+    return this.state.calc.getScripts().then(function(list) {
+      return Promise.all(list.map(function(cs) {
+        return sha256(cs.code).then(function(hash) {
+          const name = ensurePy(cs.name);
+          const existing = self.state.scripts.find(function(s) { return s.name === name; });
+          if (!existing) {
+            const script = {
+              id: generateUUID(), name: name, activeVersionId: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              published: false, publishedAt: null
+            };
+            return dbPut('scripts', script).then(function() {
+              self.state.scripts.push(script);
+              const v = {
+                id: generateUUID(), scriptId: script.id,
+                parentVersionId: null, branchId: 'main', versionNumber: 1,
+                displayName: name + ' (v1.0)', commitMessage: 'Imported from calculator',
+                sourceCode: cs.code, createdAt: new Date().toISOString(),
+                characterCount: cs.code.length, lineCount: cs.code.split('\n').length,
+                sourceHash: hash, uploadedToCalculator: true, uploadedAt: new Date().toISOString(),
+                published: false, publishedAt: null, publishedPath: null
+              };
+              return dbPut('versions', v).then(function() {
+                self.state.versions.push(v);
+                script.activeVersionId = v.id;
+                return dbPut('scripts', script);
+              });
+            });
+          }
+          return dbGet('versions', existing.activeVersionId).then(function(av) {
+            if (av && av.sourceHash === hash) return null;
+            const vs = self.getVersions(existing.id);
+            const n = vs.length ? Math.max.apply(null, vs.map(function(v) { return v.versionNumber; })) + 1 : 1;
+            const v = {
+              id: generateUUID(), scriptId: existing.id,
+              parentVersionId: existing.activeVersionId,
+              branchId: av ? av.branchId : 'main',
+              versionNumber: n,
+              displayName: existing.name + ' (' + vLabel(n) + ')',
+              commitMessage: 'Synced from device',
+              sourceCode: cs.code, createdAt: new Date().toISOString(),
+              characterCount: cs.code.length, lineCount: cs.code.split('\n').length,
+              sourceHash: hash, uploadedToCalculator: true, uploadedAt: new Date().toISOString(),
+              published: false, publishedAt: null, publishedPath: null
+            };
+            return dbPut('versions', v).then(function() {
+              self.state.versions.push(v);
+              existing.activeVersionId = v.id;
+              existing.updatedAt = new Date().toISOString();
+              return dbPut('scripts', existing);
+            });
+          });
+        });
+      })).then(function() {
+        return Promise.all([dbAll('scripts'), dbAll('versions')]);
+      }).then(function(res) {
+        self.state.scripts = res[0];
+        self.state.versions = res[1];
+        self.renderExplorer();
+        notify('Calculator scripts synchronized', 'success');
+      });
+    }).catch(function(e) {
+      notify('Sync failed: ' + e.message, 'error');
+    });
+  },
+
+  updateCalcStatus: function(connected, info) {
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    const btn = document.getElementById('btn-connect');
+    if (connected) {
+      dot.classList.add('connected');
+      const label = (info && (info.model || info.name || info.device)) || this.state.calc.getDeviceLabel();
+      text.textContent = 'Connected — ' + label;
+      btn.title = 'Reconnect';
+    } else {
+      dot.classList.remove('connected');
+      text.textContent = 'Not connected';
+      btn.title = 'Connect calculator';
+    }
+  },
+
+  renderExplorer: function() {
+    const self = this;
+    const tree = document.getElementById('script-tree');
+    tree.innerHTML = '';
+    if (!this.state.scripts.length) {
+      tree.innerHTML = '<div class="empty-state">No scripts yet</div>';
+      return;
+    }
+    const scripts = this.state.scripts.slice().sort(function(a, b) {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+    scripts.forEach(function(script) {
+      const versions = self.getVersions(script.id);
+      const cur = script.activeVersionId
+        ? self.getVersion(script.id, script.activeVersionId)
+        : self.getLatest(script.id);
+      const node = document.createElement('div');
+      node.className = 'tree-node' + (self.state.currentScriptId === script.id ? ' active' : '');
+      node.dataset.scriptId = script.id;
+      node.innerHTML =
+        '<button class="tree-script-row">' +
+          '<span class="tree-script-left">' +
+            '<span class="caret">' + icon('chevron') + '</span>' +
+            icon('folder') +
+            '<span class="tree-script-name">' + script.name + '</span>' +
+          '</span>' +
+          '<span class="tree-script-meta">' + (cur ? vLabel(cur.versionNumber) : 'draft') + '</span>' +
+        '</button>' +
+        '<div class="tree-versions"></div>';
+
+      const row = node.querySelector('.tree-script-row');
+      const nameEl = node.querySelector('.tree-script-name');
+      row.addEventListener('click', function(e) {
+        if (!e.target.closest('.tree-script-name')) node.classList.toggle('expanded');
+      });
+      nameEl.style.cursor = 'pointer';
+      nameEl.addEventListener('click', function(e) {
+        e.stopPropagation();
+        self.loadVersion(script.id, script.activeVersionId || null);
+      });
+
+      const wrap = node.querySelector('.tree-versions');
+      versions.forEach(function(v) {
+        const ve = document.createElement('button');
+        ve.dataset.versionId = v.id;
+        const activeTab = self.getActiveTab();
+        const isCur = activeTab && activeTab.versionId === v.id;
+        ve.className = 'tree-version-row' + (isCur ? ' current' : '') + (v.published ? ' published' : '');
+        const rp = self.state.restorePoints.find(function(r) { return r.versionId === v.id; });
+        ve.innerHTML =
+          '<span class="tree-version-left">' +
+            icon('file') +
+            '<span class="tree-version-name">' + script.name + ' (' + vLabel(v.versionNumber) + ')</span>' +
+          '</span>' +
+          '<span class="tree-version-meta">' + (rp ? '★ ' : '') + amsDisplay(new Date(v.createdAt)) + '</span>';
+        ve.addEventListener('click', function() {
+          node.classList.add('expanded');
+          self.loadVersion(script.id, v.id);
+        });
+        wrap.appendChild(ve);
+      });
+      if (self.state.currentScriptId === script.id) node.classList.add('expanded');
+      tree.appendChild(node);
+    });
+  },
+
+  refreshMarket: function(force) {
+    const self = this;
+    const q = (document.getElementById('market-search-input').value || '').trim();
+    this.state.marketQuery = q;
+    if (!force && this.state.marketplaceInitialized) {
+      this.renderMarket();
+      return Promise.resolve();
+    }
+    statusPill('Loading marketplace…', 'warning');
+
+    const tryFetch = function(branch) {
+      const url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/git/trees/' + branch + '?recursive=1';
+      return fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } })
+        .then(function(res) {
+          if (res.status >= 400) throw new Error('GitHub ' + res.status);
+          return res.json().then(function(data) {
+            return { branch: branch, allFiles: data.tree || [] };
+          });
+        });
     };
 
-    window.app = app;
-    app.init();
-  </script>
+    return tryFetch(GITHUB_BRANCH).then(function(result) {
+      let py = result.allFiles.filter(function(i) {
+        return i.type === 'blob' && i.path && typeof i.path === 'string' && i.path.endsWith('.py');
+      });
+      if (py.length === 0 && GITHUB_BRANCH.toLowerCase() === 'main') {
+        return tryFetch('master').then(function(fb) {
+          const fbPy = fb.allFiles.filter(function(i) {
+            return i.type === 'blob' && i.path && typeof i.path === 'string' && i.path.endsWith('.py');
+          });
+          if (fbPy.length > 0) return { branch: 'master', allFiles: fb.allFiles, pyFiles: fbPy };
+          return { branch: result.branch, allFiles: result.allFiles, pyFiles: py };
+        });
+      }
+      return { branch: result.branch, allFiles: result.allFiles, pyFiles: py };
+    }).then(function(result) {
+      const py = result.pyFiles;
+      const all = result.allFiles;
+      const branch = result.branch;
+      py.forEach(function(item) {
+        const fn = item.path.split('/').pop();
+        const base = fn.replace(/\.py$/i, '');
+        const sl = item.path.lastIndexOf('/');
+        const dir = sl >= 0 ? item.path.substring(0, sl + 1) : '';
+        const pngP = dir + base + '.png';
+        const jpgP = dir + base + '.jpg';
+        if (all.some(function(f) { return f.path === pngP; })) {
+          item.iconUrl = 'https://raw.githubusercontent.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/' + branch + '/' + pngP;
+        } else if (all.some(function(f) { return f.path === jpgP; })) {
+          item.iconUrl = 'https://raw.githubusercontent.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/' + branch + '/' + jpgP;
+        }
+        item.name = fn;
+        item.__branch = branch;
+      });
+      return Promise.allSettled(py.slice(0, 30).map(function(item) {
+        const raw = 'https://raw.githubusercontent.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/' + branch + '/' + item.path;
+        return fetch(raw).then(function(r) {
+          if (!r.ok) throw 0;
+          return r.text();
+        }).then(function(txt) {
+          const fl = txt.split('\n')[0].trim();
+          item.description = fl.charAt(0) === '#' ? fl.substring(1).trim() : '';
+        }).catch(function() { item.description = ''; });
+      })).then(function() {
+        self.state.marketCache = py;
+        self.state.marketplaceInitialized = true;
+        statusPill(py.length + ' scripts available', 'success');
+      });
+    }).catch(function(e) {
+      console.error('Marketplace:', e);
+      self.state.marketCache = [];
+      statusPill('Marketplace error: ' + e.message, 'error');
+    }).then(function() {
+      self.renderMarket();
+    });
+  },
+
+  renderMarket: function() {
+    const self = this;
+    const results = document.getElementById('market-results');
+    const q = (this.state.marketQuery || '').toLowerCase();
+    const items = this.state.marketCache.filter(function(i) {
+      if (!q) return true;
+      return (i.name || '').toLowerCase().indexOf(q) !== -1 || (i.path || '').toLowerCase().indexOf(q) !== -1;
+    });
+    results.innerHTML = '';
+    if (!this.state.marketCache.length) {
+      results.innerHTML = '<div class="empty-state">No marketplace scripts found yet.</div>';
+      return;
+    }
+    if (!items.length) {
+      results.innerHTML = '<div class="empty-state">No results matched your search.</div>';
+      return;
+    }
+    items.slice(0, 50).forEach(function(item) {
+      const card = document.createElement('div');
+      card.className = 'market-card';
+      const iconHtml = item.iconUrl
+        ? '<img src="' + item.iconUrl + '" style="width:20px;height:20px;border-radius:4px;object-fit:cover;margin-right:8px;" alt="">'
+        : '';
+      const descHtml = item.description ? '<div class="market-subtitle">' + item.description + '</div>' : '';
+      card.innerHTML =
+        '<div class="market-row">' +
+          '<div style="min-width:0; display:flex; align-items:center;">' +
+            iconHtml +
+            '<div style="min-width:0;">' +
+              '<div class="market-title">' + (item.name || 'Unknown') + '</div>' +
+              descHtml +
+            '</div>' +
+          '</div>' +
+          '<button class="market-action" title="Load">' + icon('eye') + '</button>' +
+        '</div>';
+      card.querySelector('.market-action').addEventListener('click', function() {
+        self.loadMarket(item);
+      });
+      results.appendChild(card);
+    });
+  },
+
+  loadMarket: function(item) {
+    const self = this;
+    notify('Loading script…', 'info');
+    const branch = item.__branch || GITHUB_BRANCH;
+    const raw = 'https://raw.githubusercontent.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/' + branch + '/' + item.path;
+    return fetch(raw).then(function(r) {
+      if (!r.ok) throw new Error('Load failed (' + r.status + ')');
+      return r.text();
+    }).then(function(content) {
+      const tabId = self.openRemote(item.name || 'Unknown', content);
+      self.setActiveTab(tabId, { force: true });
+      notify('Script opened', 'success');
+    }).catch(function(e) {
+      notify('Load failed: ' + e.message, 'error');
+    });
+  },
+
+  publish: function() {
+    const self = this;
+    const tab = this.getActiveTab();
+    if (!tab || tab.readOnly || !tab.scriptId) {
+      notify('Open a local script before publishing', 'warning');
+      return;
+    }
+    const script = this.getScript(tab.scriptId);
+    if (!script) return;
+
+    const doPublish = function() {
+      return dbGet('versions', script.activeVersionId).then(function(av) {
+        if (!av) {
+          notify('Save a version first', 'warning');
+          return;
+        }
+        const endpoint = 'https://db-5-nmwrks-tkn-pldr.vercel.app/api/upload';
+        const content = self.state.editor.getValue();
+        const rawName = (script.name || '').trim();
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Europe/Amsterdam',
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(new Date());
+        function pick(t) { const f = parts.find(function(p) { return p.type === t; }); return f ? f.value : ''; }
+        const tsName = Number(pick('day')) + '-' + Number(pick('month')) + '-' + pick('year') + '-' + pick('hour') + ':' + pick('minute');
+        const filename = rawName ? rawName.replace(/\.py$/i, '') + '.py' : tsName + '.py';
+
+        notify('Publishing...', 'info');
+        return fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: filename, content: content, commitMessage: 'Publish ' + filename })
+        }).then(function(res) {
+          return res.json().then(function(data) {
+            if (!res.ok) throw new Error(data.error || 'Publish failed');
+            av.published = true;
+            av.publishedAt = new Date().toISOString();
+            av.publishedPath = filename;
+            return dbPut('versions', av).then(function() {
+              script.published = true;
+              script.publishedAt = av.publishedAt;
+              return dbPut('scripts', script);
+            }).then(function() {
+              self.renderExplorer();
+              notify('Published: ' + filename, 'success');
+              const btn = document.getElementById('btn-publish');
+              btn.innerHTML = icon('check');
+              setTimeout(function() { setIconButton(btn, 'cloud'); }, 1400);
+            });
+          });
+        }).catch(function(e) {
+          notify('Publish failed: ' + e.message, 'error');
+          const btn = document.getElementById('btn-publish');
+          btn.innerHTML = icon('warning');
+          setTimeout(function() { setIconButton(btn, 'cloud'); }, 1400);
+        });
+      });
+    };
+
+    if (tab.dirty) {
+      this.saveVersion({ silent: true, force: true }).then(doPublish);
+    } else {
+      doPublish();
+    }
+  },
+
+  exportAll: function() {
+    notify('Generating backup…', 'info');
+    const zip = new JSZip();
+    Promise.all([dbAll('scripts'), dbAll('versions'), dbAll('restorePoints')]).then(function(res) {
+      const scripts = res[0], versions = res[1], rps = res[2];
+      const manifest = {
+        application: 'DUB5 Python Version Manager',
+        exportedAt: new Date().toISOString(),
+        scripts: scripts.map(function(s) { return { id: s.id, name: s.name }; }),
+        versions: versions.map(function(v) { return { id: v.id, scriptId: v.scriptId, versionNumber: v.versionNumber }; }),
+        restorePoints: rps
+      };
+      zip.file('README.txt', 'DUB5 Python Version Manager Backup\nExported: ' + new Date().toISOString() + '\n');
+      zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+      const scriptsFolder = zip.folder('scripts');
+      const versionsFolder = zip.folder('versions');
+      const rpFolder = zip.folder('restore-points');
+      scripts.forEach(function(script) {
+        const sv = versions.filter(function(v) { return v.scriptId === script.id; })
+          .sort(function(a, b) { return b.versionNumber - a.versionNumber; });
+        const latest = sv[0];
+        if (latest) scriptsFolder.file(script.name, latest.sourceCode);
+        const vf = versionsFolder.folder(script.name.replace(/\.py$/i, ''));
+        sv.forEach(function(v) {
+          const pad = String(v.versionNumber).padStart(3, '0');
+          const safe = (v.displayName || 'v' + v.versionNumber).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          vf.file(pad + '-' + safe + '.py', v.sourceCode);
+        });
+      });
+      rpFolder.file('restore-points.json', JSON.stringify(rps, null, 2));
+      return zip.generateAsync({ type: 'blob' });
+    }).then(function(content) {
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dub5-backup-' + new Date().toISOString().split('T')[0] + '.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Backup exported', 'success');
+    }).catch(function(e) {
+      notify('Export failed: ' + e.message, 'error');
+    });
+  },
+
+  updateUI: function() {
+    const ind = document.getElementById('unsaved-indicator');
+    ind.classList.toggle('hidden', !this.state.unsavedChanges);
+    const activeTab = this.getActiveTab();
+    const bs = document.getElementById('btn-save-version');
+    const bp = document.getElementById('btn-publish');
+    const bu = document.getElementById('btn-upload');
+    const si = document.getElementById('script-name-input');
+    const rh = document.getElementById('readonly-hint');
+    if (!activeTab) {
+      bs.disabled = true; bp.disabled = true; bu.disabled = true;
+      si.disabled = true; rh.classList.add('hidden');
+    } else {
+      bs.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+      bp.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+      bu.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+      si.disabled = !!activeTab.readOnly || !activeTab.scriptId;
+      rh.classList.toggle('hidden', !activeTab.readOnly);
+    }
+  },
+
+  showModal: function(title, fields, onSubmit) {
+    const root = document.getElementById('modal-root');
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const fieldsHtml = fields.map(function(f) {
+      if (f.type === 'checkbox') {
+        return '<label class="modal-checkbox-label"><input type="checkbox" id="m-' + f.id + '"' + (f.checked ? ' checked' : '') + '> ' + f.label + '</label>';
+      }
+      return '<label for="m-' + f.id + '">' + f.label + '</label><input type="' + f.type + '" id="m-' + f.id + '" class="modal-input" placeholder="' + (f.placeholder || '') + '" value="' + (f.value || '') + '">';
+    }).join('');
+    overlay.innerHTML =
+      '<div class="modal"><h3>' + title + '</h3>' + fieldsHtml +
+      '<div class="modal-actions"><button class="cancel">Cancel</button><button class="primary confirm">Confirm</button></div></div>';
+    root.appendChild(overlay);
+    overlay.querySelector('.cancel').onclick = function() { overlay.remove(); };
+    overlay.querySelector('.confirm').onclick = function() {
+      const data = {};
+      fields.forEach(function(f) {
+        if (f.type === 'checkbox') data[f.id] = document.getElementById('m-' + f.id).checked ? 'on' : 'off';
+        else data[f.id] = document.getElementById('m-' + f.id).value;
+      });
+      try {
+        const r = onSubmit(data);
+        if (r && r.then) r.then(function() { overlay.remove(); }).catch(function(e) {
+          notify(e.message || 'Failed', 'error');
+        });
+        else overlay.remove();
+      } catch (e) {
+        notify(e.message || 'Failed', 'error');
+      }
+    };
+    const first = overlay.querySelector('.modal-input');
+    if (first) first.focus();
+  }
+};
+
+// expose for debugging
+window.app = app;
+
+// boot the app
+app.init();
+</script>
 </body>
 </html>
