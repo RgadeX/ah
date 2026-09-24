@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Franse Werkwoorden Vervoegen</title>
+<style>
+:root {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+  --error: #dc2626;
+  --error-bg: #fee2e2;
+  --border: #e2e8f0;
+  --accent: #f59e0b;
+  --explanation-bg: #fffbeb;
+  --explanation-border: #f59e0b;
+  --explanation-text: #78350f;
+  --explanation-strong: #92400e;
+  --checked-bg: #eff6ff;
+}
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --success: #4ade80;
+  --success-bg: #14361f;
+  --error: #f87171;
+  --error-bg: #3b1414;
+  --border: #334155;
+  --accent: #fbbf24;
+  --explanation-bg: #422006;
+  --explanation-border: #f59e0b;
+  --explanation-text: #fde68a;
+  --explanation-strong: #fcd34d;
+  --checked-bg: #1e3a5f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background 0.2s, color 0.2s;
+}
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+h1 { font-size: 1.25rem; font-weight: 700; }
+nav { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+nav button {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  transition: all 0.15s;
+}
+nav button:hover { background: var(--bg); }
+nav button.active { background: var(--primary); color: white; border-color: var(--primary); }
+#theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text);
+}
+#theme-toggle:hover { background: var(--bg); }
+main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+h2 { font-size: 1.125rem; margin-bottom: 1rem; }
+h3 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; }
+.section { margin-bottom: 1.5rem; }
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+.checkbox-grid.nested {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+}
+.checkbox-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.15s;
+  user-select: none;
+}
+.checkbox-grid label:hover { background: var(--bg); }
+.checkbox-grid label.checked {
+  background: var(--checked-bg);
+  border-color: var(--primary);
+}
+.checkbox-grid input { accent-color: var(--primary); }
+button.primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button.primary:hover { background: var(--primary-hover); }
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+button.secondary {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+button.secondary:hover { background: var(--bg); }
+.row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.question-card { text-align: center; padding: 2rem 1.5rem; }
+.question-prompt {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+.question-prompt .verb { color: var(--primary); }
+.question-prompt .tense { color: var(--accent); }
+.question-prompt .pronoun { color: var(--text); }
+.answer-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.875rem 1rem;
+  font-size: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--text);
+}
+.answer-input:focus { border-color: var(--primary); }
+.answer-input.correct { border-color: var(--success); background: var(--success-bg); }
+.answer-input.wrong { border-color: var(--error); background: var(--error-bg); }
+.feedback {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: var(--success-bg); color: var(--success); }
+.feedback.wrong { background: var(--error-bg); color: var(--error); }
+.feedback .correct-answer { font-weight: 700; font-size: 1.125rem; }
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s;
+  border-radius: 3px;
+}
+.progress-text {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.stat-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+.stat-box .value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+.stat-box .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+th, td {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+tr:last-child td { border-bottom: none; }
+td.pronoun { color: var(--muted); font-weight: 500; }
+.cheat-section { margin-bottom: 2rem; }
+.cheat-section h3 {
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  margin-top: 1.5rem;
+}
+.cheat-section h3:first-child { margin-top: 0; }
+.explanation {
+  background: var(--explanation-bg);
+  border-left: 3px solid var(--explanation-border);
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  color: var(--explanation-text);
+}
+.explanation strong { color: var(--explanation-strong); }
+.tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.tabs button {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tabs button:hover { color: var(--text); }
+.tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+.hidden { display: none !important; }
+.session-config-summary {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.badge {
+  display: inline-block;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  margin-right: 0.25rem;
+  color: var(--muted);
+}
+select, input[type="number"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--text);
+}
+.welcome-text { color: var(--muted); margin-bottom: 1.5rem; }
+.help-text { font-size: 0.75rem; color: var(--muted); margin-top: 0.375rem; }
+.subsection {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border-radius: 8px;
+}
+.subsection-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+@media (max-width: 600px) {
+  header { padding: 1rem; }
+  main { padding: 1rem; }
+  .question-prompt { font-size: 1.375rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Franse werkwoorden vervoegen</h1>
+  <nav>
+    <button data-tab="practice" class="active">Oefenen</button>
+    <button data-tab="cheatsheet">Spiekbriefje</button>
+    <button data-tab="stats">Resultaten</button>
+    <button id="theme-toggle" title="Wissel dark mode">🌙</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- PRACTICE TAB -->
+<section id="tab-practice">
+
+  <!-- SETUP -->
+  <div id="setup" class="card">
+    <h2>Instellingen</h2>
+    <p class="welcome-text">Kies wat je wilt oefenen en klik op Start.</p>
+
+    <div class="section">
+      <h3>Tijden</h3>
+      <div class="checkbox-grid" id="tense-options"></div>
+    </div>
+
+    <div class="section">
+      <h3>Persoonlijke voornaamwoorden</h3>
+      <div class="checkbox-grid" id="pronoun-options"></div>
+    </div>
+
+    <div class="section">
+      <h3>Werkwoordgroepen</h3>
+      <div class="checkbox-grid" id="verbgroup-options"></div>
+
+      <!-- Irregular verb sub-selection -->
+      <div class="subsection" id="irregular-subsection">
+        <div class="subsection-label">Kies specifieke onregelmatige werkwoorden</div>
+        <div class="checkbox-grid" id="irregular-verbs-options"></div>
+        <div class="help-text">Vink aan welke onregelmatige werkwoorden je wilt oefenen. Laat alles aangevinkt voor alle vier.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Sessie lengte</h3>
+      <div class="row">
+        <select id="session-length">
+          <option value="10">10 vragen</option>
+          <option value="20" selected>20 vragen</option>
+          <option value="50">50 vragen</option>
+          <option value="0">Alle vragen</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="start-btn">Start sessie</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz" class="hidden">
+    <div class="card question-card">
+      <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+      <div class="progress-text">
+        <span id="progress-label">Vraag 1</span>
+        <span id="score-label">✓ 0 · ✗ 0</span>
+      </div>
+      <div class="question-prompt" id="question-prompt"></div>
+      <input type="text" class="answer-input" id="answer-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Typ je antwoord...">
+      <div class="feedback" id="feedback"></div>
+      <div class="row" style="justify-content:center; margin-top:1rem;">
+        <button class="primary" id="check-btn">Controleer</button>
+        <button class="secondary hidden" id="next-btn">Volgende →</button>
+        <button class="secondary" id="stop-btn">Stop sessie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+    <div class="card">
+      <h2>Sessie voltooid! 🎉</h2>
+      <div class="stats-grid" id="session-stats"></div>
+      <div class="row">
+        <button class="primary" id="again-btn">Nieuwe sessie</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- CHEATSHEET TAB -->
+<section id="tab-cheatsheet" class="hidden">
+  <div class="card">
+    <h2>Spiekbriefje</h2>
+    <div class="tabs" id="cheat-tabs">
+      <button data-cheat="present" class="active">Présent</button>
+      <button data-cheat="imparfait">Imparfait</button>
+      <button data-cheat="futur">Futur simple</button>
+      <button data-cheat="passe_compose">Passé composé</button>
+    </div>
+    <div id="cheat-content"></div>
+  </div>
+</section>
+
+<!-- STATS TAB -->
+<section id="tab-stats" class="hidden">
+  <div class="card">
+    <h2>Resutaten</h2>
+    <div id="stats-content"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+
+const TENSES = {
+  present: 'Présent',
+  imparfait: 'Imparfait',
+  futur: 'Futur simple',
+  passe_compose: 'Passé composé'
+};
+
+const PRONOUNS = ['je', 'tu', 'il/elle/on', 'nous', 'vous', 'ils/elles'];
+
+const VERB_GROUPS = {
+  er: {
+    label: 'Werkwoorden op -er',
+    verbs: ['parler', 'aimer', 'jouer', 'regarder', 'donner', 'chanter', 'travailler', 'habiter', 'écouter', 'étudier']
+  },
+  ir: {
+    label: 'Werkwoorden op -ir',
+    verbs: ['finir', 'choisir', 'réussir', 'grandir', 'remplir']
+  },
+  re: {
+    label: 'Werkwoorden op -re',
+    verbs: ['vendre', 'attendre', 'répondre', 'perdre', 'entendre']
+  },
+  irregular: {
+    label: 'Onregelmatig (avoir, être, aller, faire)',
+    verbs: ['avoir', 'être', 'aller', 'faire']
+  }
+};
+
+const IRREGULAR_VERBS = ['avoir', 'être', 'aller', 'faire'];
+
+// ============================================================
+// CONJUGATION ENGINE
+// ============================================================
+
+function isVowelStart(s) {
+  const c = (s[0] || '').toLowerCase();
+  return 'aeiouéèêàâîïôûùh'.includes(c);
+}
+
+function present(verb) {
+  if (verb === 'avoir') return {'je':'ai','tu':'as','il/elle/on':'a','nous':'avons','vous':'avez','ils/elles':'ont'};
+  if (verb === 'être') return {'je':'suis','tu':'es','il/elle/on':'est','nous':'sommes','vous':'êtes','ils/elles':'sont'};
+  if (verb === 'aller') return {'je':'vais','tu':'vas','il/elle/on':'va','nous':'allons','vous':'allez','ils/elles':'vont'};
+  if (verb === 'faire') return {'je':'fais','tu':'fais','il/elle/on':'fait','nous':'faisons','vous':'faites','ils/elles':'font'};
+  if (verb.endsWith('er')) {
+    const s = verb.slice(0, -2);
+    return {'je':s+'e','tu':s+'es','il/elle/on':s+'e','nous':s+'ons','vous':s+'ez','ils/elles':s+'ent'};
+  }
+  if (verb.endsWith('ir')) {
+    const s = verb.slice(0, -2);
+    return {'je':s+'is','tu':s+'is','il/elle/on':s+'it','nous':s+'issons','vous':s+'issez','ils/elles':s+'issent'};
+  }
+  if (verb.endsWith('re')) {
+    const s = verb.slice(0, -2);
+    return {'je':s+'s','tu':s+'s','il/elle/on':s,'nous':s+'ons','vous':s+'ez','ils/elles':s+'ent'};
+  }
+  return {};
+}
+
+function imparfaitStem(verb) {
+  if (verb === 'être') return 'ét';
+  if (verb === 'avoir') return 'av';
+  if (verb === 'aller') return 'all';
+  if (verb === 'faire') return 'fais';
+  const p = present(verb);
+  return p['nous'].slice(0, -3);
+}
+
+function imparfait(verb) {
+  const s = imparfaitStem(verb);
+  return {'je':s+'ais','tu':s+'ais','il/elle/on':s+'ait','nous':s+'ions','vous':s+'iez','ils/elles':s+'aient'};
+}
+
+function futurStem(verb) {
+  if (verb === 'avoir') return 'aur';
+  if (verb === 'être') return 'ser';
+  if (verb === 'aller') return 'ir';
+  if (verb === 'faire') return 'fer';
+  if (verb.endsWith('re')) return verb.slice(0, -1);
+  return verb;
+}
+
+function futur(verb) {
+  const s = futurStem(verb);
+  return {'je':s+'ai','tu':s+'as','il/elle/on':s+'a','nous':s+'ons','vous':s+'ez','ils/elles':s+'ont'};
+}
+
+function pastParticiple(verb) {
+  if (verb === 'avoir') return 'eu';
+  if (verb === 'être') return 'été';
+  if (verb === 'faire') return 'fait';
+  if (verb === 'aller') return 'allé';
+  if (verb.endsWith('er')) return verb.slice(0, -2) + 'é';
+  if (verb.endsWith('ir')) return verb.slice(0, -2) + 'i';
+  if (verb.endsWith('re')) return verb.slice(0, -2) + 'u';
+  return verb;
+}
+
+function passeCompose(verb) {
+  const pp = pastParticiple(verb);
+  const result = {};
+  const usesEtre = (verb === 'aller');
+  const aux = usesEtre ? present('être') : present('avoir');
+  for (const p of PRONOUNS) {
+    if (usesEtre) {
+      let agree;
+      if (p === 'je' || p === 'tu' || p === 'il/elle/on') agree = pp + '(e)';
+      else if (p === 'nous') agree = pp + '(e)s';
+      else if (p === 'vous') agree = pp + '(e)(s)';
+      else agree = pp + '(e)s';
+      result[p] = aux[p] + ' ' + agree;
+    } else {
+      result[p] = aux[p] + ' ' + pp;
+    }
+  }
+  return result;
+}
+
+function conjugate(verb, tense) {
+  switch (tense) {
+    case 'present': return present(verb);
+    case 'imparfait': return imparfait(verb);
+    case 'futur': return futur(verb);
+    case 'passe_compose': return passeCompose(verb);
+  }
+  return {};
+}
+
+// ============================================================
+// ANSWER CHECKING
+// ============================================================
+
+function normalize(s) {
+  return (s || '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[’‘`]/g, "'");
+}
+
+const PRONOUN_PREFIXES = [
+  'je ', "j'", 'tu ', 'il ', 'elle ', 'on ',
+  'nous ', 'vous ', 'ils ', 'elles ', 'il/elle/on '
+];
+
+function stripPronoun(input) {
+  let s = normalize(input);
+  for (const p of PRONOUN_PREFIXES) {
+    if (s.startsWith(p)) return s.slice(p.length).trim();
+  }
+  return s;
+}
+
+function displayForm(pronoun, verbForm) {
+  if (pronoun === 'je' && isVowelStart(verbForm)) {
+    return "j'" + verbForm;
+  }
+  return pronoun + ' ' + verbForm;
+}
+
+function expandAgreement(form) {
+  let results = [form];
+  let next = [];
+  for (const r of results) {
+    if (r.includes('(e)')) {
+      next.push(r.replace('(e)', ''));
+      next.push(r.replace('(e)', 'e'));
+    } else next.push(r);
+  }
+  results = next;
+  next = [];
+  for (const r of results) {
+    if (r.includes('(s)')) {
+      next.push(r.replace('(s)', ''));
+      next.push(r.replace('(s)', 's'));
+    } else next.push(r);
+  }
+  return [...new Set(next)];
+}
+
+function acceptableAnswers(verb, tense, pronoun) {
+  const form = conjugate(verb, tense)[pronoun];
+  if (!form) return [];
+  const variants = expandAgreement(form);
+  const all = new Set();
+  for (const v of variants) {
+    all.add(normalize(v));
+    all.add(normalize(displayForm(pronoun, v)));
+  }
+  all.add(normalize(pronoun + ' ' + form));
+  return [...all];
+}
+
+function checkAnswer(input, verb, tense, pronoun) {
+  const acceptable = acceptableAnswers(verb, tense, pronoun);
+  const userStripped = stripPronoun(input);
+  const userFull = normalize(input);
+  return acceptable.includes(userStripped) || acceptable.includes(userFull);
+}
+
+// ============================================================
+// STATE
+// ============================================================
+
+let state = {
+  queue: [],
+  current: null,
+  correctCount: 0,
+  wrongCount: 0,
+  totalQuestions: 0,
+  answered: 0,
+  config: null,
+  sessionStats: { byTense: {} }
+};
+
+// ============================================================
+// LOCALSTORAGE
+// ============================================================
+
+const STORAGE_KEY = 'fransTrainerStats_v1';
+const THEME_KEY = 'fransTrainerTheme_v1';
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {
+    totalCorrect: 0,
+    totalWrong: 0,
+    sessions: [],
+    byTense: {},
+    byVerbGroup: {}
+  };
+}
+
+function saveStats(stats) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch (e) {}
+}
+
+function loadTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'light'; } catch (e) { return 'light'; }
+}
+
+function saveTheme(theme) {
+  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+// ============================================================
+// UI: SETUP
+// ============================================================
+
+function buildSetupUI() {
+  const tenseEl = document.getElementById('tense-options');
+  tenseEl.innerHTML = '';
+  for (const [key, label] of Object.entries(TENSES)) {
+    tenseEl.appendChild(makeCheckbox('tense', key, label, true));
+  }
+
+  const pronEl = document.getElementById('pronoun-options');
+  pronEl.innerHTML = '';
+  for (const p of PRONOUNS) {
+    pronEl.appendChild(makeCheckbox('pronoun', p, p, true));
+  }
+
+  const verbEl = document.getElementById('verbgroup-options');
+  verbEl.innerHTML = '';
+  for (const [key, group] of Object.entries(VERB_GROUPS)) {
+    if (key === 'irregular') continue; // will be shown separately as sub-options below
+    verbEl.appendChild(makeCheckbox('verbgroup', key, group.label, true));
+  }
+  // Add "irregular" as a toggle too — but we handle it via the sub-checkboxes
+  // Actually we still want the group toggle for consistency; let's add it.
+  const irrGroupCb = makeCheckbox('verbgroup', 'irregular', 'Onregelmatige werkwoorden (kies hieronder)', true);
+  irrGroupCb.querySelector('input').addEventListener('change', updateIrregularSubsectionVisibility);
+  verbEl.appendChild(irrGroupCb);
+
+  // Irregular individual verbs
+  const irrEl = document.getElementById('irregular-verbs-options');
+  irrEl.innerHTML = '';
+  for (const v of IRREGULAR_VERBS) {
+    irrEl.appendChild(makeCheckbox('irregular-verb', v, v, true));
+  }
+
+  // Attach change handlers to update .checked class
+  document.querySelectorAll('.checkbox-grid input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('label').classList.toggle('checked', cb.checked);
+    });
+  });
+
+  updateIrregularSubsectionVisibility();
+}
+
+function updateIrregularSubsectionVisibility() {
+  const irrGroup = document.querySelector('input[data-group="verbgroup"][value="irregular"]');
+  const sub = document.getElementById('irregular-subsection');
+  if (!irrGroup || !sub) return;
+  sub.style.display = irrGroup.checked ? '' : 'none';
+}
+
+function makeCheckbox(group, value, label, checked) {
+  const lbl = document.createElement('label');
+  if (checked) lbl.classList.add('checked');
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = checked;
+  cb.dataset.group = group;
+  cb.value = value;
+  lbl.appendChild(cb);
+  lbl.appendChild(document.createTextNode(label));
+  return lbl;
+}
+
+function getChecked(group) {
+  return [...document.querySelectorAll(`input[data-group="${group}"]:checked`)].map(cb => cb.value);
+}
+
+// ============================================================
+// SESSION LOGIC
+// ============================================================
+
+function startSession() {
+  const tenses = getChecked('tense');
+  const pronouns = getChecked('pronoun');
+  const groups = getChecked('verbgroup');
+
+  if (!tenses.length || !pronouns.length || !groups.length) {
+    alert('Selecteer minstens één tijd, één voornaamwoord en één werkwoordgroep.');
+    return;
+  }
+
+  // Build the effective verb list per group
+  const groupVerbs = {};
+  for (const g of groups) {
+    if (g === 'irregular') {
+      const selectedIrr = getChecked('irregular-verb');
+      if (!selectedIrr.length) {
+        alert('Je hebt "Onregelmatige werkwoorden" aangevinkt, maar geen enkel onregelmatig werkwoord geselecteerd. Vink er minstens één aan of zet de groep uit.');
+        return;
+      }
+      groupVerbs[g] = selectedIrr;
+    } else {
+      groupVerbs[g] = VERB_GROUPS[g].verbs.slice();
+    }
+  }
+
+  // Build all combinations
+  const allQuestions = [];
+  for (const g of groups) {
+    for (const verb of groupVerbs[g]) {
+      for (const tense of tenses) {
+        for (const pronoun of pronouns) {
+          allQuestions.push({ verb, tense, pronoun, group: g });
+        }
+      }
+    }
+  }
+
+  if (!allQuestions.length) {
+    alert('Geen vragen om te oefenen met de huidige selectie.');
+    return;
+  }
+
+  shuffle(allQuestions);
+
+  const lenSel = parseInt(document.getElementById('session-length').value, 10);
+  const queue = (lenSel > 0) ? allQuestions.slice(0, lenSel) : allQuestions;
+
+  state = {
+    queue: queue.slice(),
+    current: null,
+    correctCount: 0,
+    wrongCount: 0,
+    totalQuestions: queue.length,
+    answered: 0,
+    config: { tenses, pronouns, groups, groupVerbs },
+    sessionStats: { byTense: {} }
+  };
+
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+
+  nextQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function nextQuestion() {
+  if (state.queue.length === 0) {
+    endSession();
+    return;
+  }
+
+  state.current = state.queue[0];
+  state.answered++;
+
+  const prompt = document.getElementById('question-prompt');
+  prompt.innerHTML = `
+    <span class="verb">${state.current.verb}</span> —
+    <span class="tense">${TENSES[state.current.tense]}</span> —
+    <span class="pronoun">${state.current.pronoun}</span>
+  `;
+
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = 'answer-input';
+  input.disabled = false;
+  input.focus();
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.innerHTML = '';
+
+  document.getElementById('check-btn').classList.remove('hidden');
+  document.getElementById('next-btn').classList.add('hidden');
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = state.totalQuestions;
+  const done = total - state.queue.length;
+  const pct = total > 0 ? (done / total) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent =
+    `Vraag ${state.answered} · nog ${state.queue.length} te gaan`;
+  document.getElementById('score-label').textContent =
+    `✓ ${state.correctCount} · ✗ ${state.wrongCount}`;
+}
+
+function checkCurrent() {
+  if (!state.current) return;
+  const input = document.getElementById('answer-input');
+  const userAnswer = input.value.trim();
+  if (!userAnswer) return;
+
+  const { verb, tense, pronoun } = state.current;
+  const correct = checkAnswer(userAnswer, verb, tense, pronoun);
+  const correctForm = conjugate(verb, tense)[pronoun];
+  const display = displayForm(pronoun, correctForm);
+
+  const fb = document.getElementById('feedback');
+
+  if (correct) {
+    input.classList.add('correct');
+    fb.className = 'feedback show correct';
+    fb.innerHTML = `✓ Correct! <strong>${display}</strong>`;
+    state.correctCount++;
+    state.sessionStats.byTense[tense] = state.sessionStats.byTense[tense] || { correct: 0, wrong: 0 };
+    state.sessionStats.byTense[tense].correct++;
+    state.queue.shift();
+  } else {
+    input.classList.add('wrong');
+    fb.className = 'feedback show wrong';
+    fb.innerHTML = `✗ Helaas. Het juiste antwoord is <span class="correct-answer">${display}</span>`;
+    state.wrongCount++;
+    state.sessionStats.byTense[tense] = state.sessionStats.byTense[tense] || { correct: 0, wrong: 0 };
+    state.sessionStats.byTense[tense].wrong++;
+    const cur = state.queue.shift();
+    state.queue.push(cur);
+  }
+
+  input.disabled = true;
+  document.getElementById('check-btn').classList.add('hidden');
+  document.getElementById('next-btn').classList.remove('hidden');
+  document.getElementById('next-btn').focus();
+  updateProgress();
+}
+
+function nextAfterFeedback() {
+  nextQuestion();
+}
+
+function stopSession() {
+  if (!confirm('Weet je zeker dat je wilt stoppen? Je voortgang in deze sessie gaat verloren.')) return;
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+}
+
+function endSession() {
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('results').classList.remove('hidden');
+
+  const stats = loadStats();
+  stats.totalCorrect += state.correctCount;
+  stats.totalWrong += state.wrongCount;
+  stats.sessions.push({
+    date: new Date().toISOString(),
+    correct: state.correctCount,
+    wrong: state.wrongCount,
+    total: state.totalQuestions,
+    config: state.config
+  });
+  if (stats.sessions.length > 100) stats.sessions = stats.sessions.slice(-100);
+
+  for (const [tense, s] of Object.entries(state.sessionStats.byTense)) {
+    if (!stats.byTense[tense]) stats.byTense[tense] = { correct: 0, wrong: 0 };
+    stats.byTense[tense].correct += s.correct;
+    stats.byTense[tense].wrong += s.wrong;
+  }
+
+  saveStats(stats);
+
+  const total = state.correctCount + state.wrongCount;
+  const pct = total > 0 ? Math.round((state.correctCount / total) * 100) : 0;
+
+  document.getElementById('session-stats').innerHTML = `
+    <div class="stat-box"><div class="value">${state.correctCount}</div><div class="label">Correct</div></div>
+    <div class="stat-box"><div class="value">${state.wrongCount}</div><div class="label">Fout</div></div>
+    <div class="stat-box"><div class="value">${pct}%</div><div class="label">Score</div></div>
+    <div class="stat-box"><div class="value">${state.totalQuestions}</div><div class="label">Vragen</div></div>
+  `;
+}
+
+// ============================================================
+// CHEATSHEET
+// ============================================================
+
+let currentCheat = 'present';
+
+function renderCheatSheet() {
+  const content = document.getElementById('cheat-content');
+  const tense = currentCheat;
+  let html = '';
+
+  html += `<div class="explanation">${explanationFor(tense)}</div>`;
+
+  html += `<div class="cheat-section">`;
+  html += `<h3>Regelmatige werkwoorden op -er — voorbeeld: <em>parler</em></h3>`;
+  html += conjugationTable('parler', tense);
+  html += `</div>`;
+
+  html += `<div class="cheat-section">`;
+  html += `<h3>Regelmatige werkwoorden op -ir — voorbeeld: <em>finir</em></h3>`;
+  html += conjugationTable('finir', tense);
+  html += `</div>`;
+
+  html += `<div class="cheat-section">`;
+  html += `<h3>Regelmatige werkwoorden op -re — voorbeeld: <em>vendre</em></h3>`;
+  html += conjugationTable('vendre', tense);
+  html += `</div>`;
+
+  for (const v of ['avoir', 'être', 'aller', 'faire']) {
+    html += `<div class="cheat-section">`;
+    html += `<h3>Onregelmatig — <em>${v}</em></h3>`;
+    html += conjugationTable(v, tense);
+    html += `</div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function conjugationTable(verb, tense) {
+  const c = conjugate(verb, tense);
+  let html = '<table><thead><tr><th>Persoon</th><th>Vorm</th></tr></thead><tbody>';
+  for (const p of PRONOUNS) {
+    html += `<tr><td class="pronoun">${p}</td><td>${displayForm(p, c[p])}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function explanationFor(tense) {
+  switch (tense) {
+    case 'present':
+      return `<strong>Présent</strong> — tegenwoordige tijd.<br>
+        <strong>-er:</strong> stam + <em>-e, -es, -e, -ons, -ez, -ent</em><br>
+        <strong>-ir:</strong> stam + <em>-is, -is, -it, -issons, -issez, -issent</em><br>
+        <strong>-re:</strong> stam + <em>-s, -s, (niets), -ons, -ez, -ent</em><br>
+        <strong>Onregelmatig:</strong> avoir, être, aller en faire leer je uit het hoofd.`;
+    case 'imparfait':
+      return `<strong>Imparfait</strong> — verleden tijd (gewoonte, beschrijving).<br>
+        <strong>Stam:</strong> nous-vorm van de présent zonder <em>-ons</em>.<br>
+        <strong>Uitgangen:</strong> <em>-ais, -ais, -ait, -ions, -iez, -aient</em>.<br>
+        <strong>Let op:</strong> être heeft stam <em>ét-</em>, avoir <em>av-</em>, aller <em>all-</em>, faire <em>fais-</em>.`;
+    case 'futur':
+      return `<strong>Futur simple</strong> — toekomende tijd.<br>
+        <strong>Vorming:</strong> infinitief + <em>-ai, -as, -a, -ons, -ez, -ont</em>.<br>
+        <strong>Bij -re:</strong> laatste <em>-e</em> valt weg (vendre → vendr-).<br>
+        <strong>Onregelmatige stammen:</strong> aller → <em>ir-</em>, avoir → <em>aur-</em>, être → <em>ser-</em>, faire → <em>fer-</em>.`;
+    case 'passe_compose':
+      return `<strong>Passé composé</strong> — voltooid verleden tijd.<br>
+        <strong>Vorming:</strong> avoir/être + voltooid deelwoord.<br>
+        <strong>Voltooid deelwoord:</strong> -er → <em>-é</em>, -ir → <em>-i</em>, -re → <em>-u</em>.<br>
+        <strong>Let op:</strong> <em>aller</em> gebruikt <em>être</em> en past zich aan (allé / allée / allés / allées).<br>
+        <strong>Onregelmatig:</strong> avoir → <em>eu</em>, être → <em>été</em>, faire → <em>fait</em>.`;
+  }
+  return '';
+}
+
+// ============================================================
+// STATS TAB
+// ============================================================
+
+function renderStats() {
+  const stats = loadStats();
+  const el = document.getElementById('stats-content');
+  const total = stats.totalCorrect + stats.totalWrong;
+  const pct = total > 0 ? Math.round((stats.totalCorrect / total) * 100) : 0;
+
+  let html = `<div class="stats-grid">
+    <div class="stat-box"><div class="value">${stats.totalCorrect}</div><div class="label">Totaal correct</div></div>
+    <div class="stat-box"><div class="value">${stats.totalWrong}</div><div class="label">Totaal fout</div></div>
+    <div class="stat-box"><div class="value">${pct}%</div><div class="label">Score</div></div>
+    <div class="stat-box"><div class="value">${stats.sessions.length}</div><div class="label">Sessies</div></div>
+  </div>`;
+
+  const tenses = Object.keys(stats.byTense || {});
+  if (tenses.length) {
+    html += `<h3 style="margin-top:1.5rem;margin-bottom:0.5rem;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Per tijd</h3>`;
+    html += `<table><thead><tr><th>Tijd</th><th>Correct</th><th>Fout</th><th>Score</th></tr></thead><tbody>`;
+    for (const t of tenses) {
+      const s = stats.byTense[t];
+      const tot = s.correct + s.wrong;
+      const p = tot > 0 ? Math.round((s.correct / tot) * 100) : 0;
+      html += `<tr><td>${TENSES[t] || t}</td><td>${s.correct}</td><td>${s.wrong}</td><td>${p}%</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  if (stats.sessions.length) {
+    html += `<h3 style="margin-top:1.5rem;margin-bottom:0.5rem;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Recente sessies</h3>`;
+    html += `<table><thead><tr><th>Datum</th><th>Score</th><th>Vragen</th></tr></thead><tbody>`;
+    for (const s of stats.sessions.slice().reverse().slice(0, 15)) {
+      const d = new Date(s.date);
+      const dateStr = d.toLocaleDateString('nl-NL') + ' ' + d.toLocaleTimeString('nl-NL', {hour:'2-digit',minute:'2-digit'});
+      const tot = s.correct + s.wrong;
+      const p = tot > 0 ? Math.round((s.correct / tot) * 100) : 0;
+      html += `<tr><td>${dateStr}</td><td>${s.correct}/${tot} (${p}%)</td><td>${s.total}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  html += `<div class="row" style="margin-top:1.5rem;">
+    <button class="secondary" id="reset-stats-btn">Reset resultaten</button>
+  </div>`;
+
+  el.innerHTML = html;
+
+  document.getElementById('reset-stats-btn').addEventListener('click', () => {
+    if (confirm('Weet je zeker dat je alle resultaten wilt wissen?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      renderStats();
+    }
+  });
+}
+
+// ============================================================
+// TABS
+// ============================================================
+
+function setupTabs() {
+  const navBtns = document.querySelectorAll('nav button[data-tab]');
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      navBtns.forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('tab-practice').classList.toggle('hidden', tab !== 'practice');
+      document.getElementById('tab-cheatsheet').classList.toggle('hidden', tab !== 'cheatsheet');
+      document.getElementById('tab-stats').classList.toggle('hidden', tab !== 'stats');
+      if (tab === 'stats') renderStats();
+    });
+  });
+
+  document.querySelectorAll('#cheat-tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#cheat-tabs button').forEach(b => b.classList.toggle('active', b === btn));
+      currentCheat = btn.dataset.cheat;
+      renderCheatSheet();
+    });
+  });
+}
+
+// ============================================================
+// THEME
+// ============================================================
+
+function setupTheme() {
+  applyTheme(loadTheme());
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    saveTheme(next);
+  });
+}
+
+// ============================================================
+// EVENT BINDINGS
+// ============================================================
+
+document.getElementById('start-btn').addEventListener('click', startSession);
+document.getElementById('check-btn').addEventListener('click', checkCurrent);
+document.getElementById('next-btn').addEventListener('click', nextAfterFeedback);
+document.getElementById('stop-btn').addEventListener('click', stopSession);
+document.getElementById('again-btn').addEventListener('click', () => {
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+});
+
+document.getElementById('answer-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!document.getElementById('check-btn').classList.contains('hidden')) {
+      checkCurrent();
+    } else {
+      nextAfterFeedback();
+    }
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+
+setupTheme();
+buildSetupUI();
+setupTabs();
+renderCheatSheet();
+</script>
+
+</body>
+</html>
